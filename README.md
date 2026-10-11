@@ -11,15 +11,18 @@ and **GLM** (`glm-5`).
 
 ## Before you start
 
-- An NRP account in a namespace with LLM access, and your personal token from
-  [nrp.ai/llmtoken](https://nrp.ai/llmtoken). The organisers arrange the accounts.
-- JupyterLab on NRP. Get the notebooks into it from a JupyterLab terminal (**File → New → Terminal**):
+- Open the **training link** from the organisers and log in to NRP. It adds you to the workshop's namespace
+  for the week and shows your **LLM API key** once: copy it somewhere safe straight away. If you lose it,
+  open the training link again; you get a new key, which replaces the old one. The base URL for every
+  client is `https://ellm.nrp-nautilus.io/v1`.
+- JupyterLab: on NRP, or on your own machine with Python 3, git and `pip install -r requirements.txt`.
+  Get the notebooks from a JupyterLab terminal (**File → New → Terminal**):
 
   ```bash
   git clone https://github.com/andrzejnovak/hsf-india-agents.git
   ```
 
-Each notebook asks you to paste your token into its first cell. Never commit it anywhere.
+Each notebook asks you to paste the key into its first cell. Never commit it anywhere or paste it into a chat.
 
 ## The notebooks
 

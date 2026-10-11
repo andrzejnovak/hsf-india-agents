@@ -51,7 +51,34 @@ def keep(cell):
     return edit(cell)
 
 
+# Students get their key from the organisers' NRP training link (it also adds them to the workshop namespace),
+# not from nrp.ai/llmtoken: applied to every cell of every notebook; each pair must be used at least once.
+KEY_TEXT = [
+    ("# Paste your personal token from https://nrp.ai/llmtoken between the quotes.",
+     "# Paste your LLM API key (shown when you opened the training link) between the quotes."),
+    ("your own token from [nrp.ai/llmtoken](https://nrp.ai/llmtoken)", "your own key from the training-link page"),
+    ("([Lesson 1](https://training.nrp-nautilus.io/clariphy/1_intro.html#step-1-nrp-account))",
+     "(opening the training link adds you to it)"),
+    ("[Lesson 1](https://training.nrp-nautilus.io/clariphy/1_intro.html#step-2-get-an-api-token)",
+     "[the training link](../README.md#before-you-start)"),
+    ("your personal token from [https://nrp.ai/llmtoken](https://nrp.ai/llmtoken)", "your LLM API key from the training link"),
+    ("personal token", "LLM API key"),
+]
+KEY_USED = set()
+
+
+def key_text(cell):
+    s = src(cell)
+    for i, (old, new) in enumerate(KEY_TEXT):
+        if old in s:
+            s = s.replace(old, new)
+            KEY_USED.add(i)
+    cell["source"] = s.splitlines(keepends=True)
+
+
 def save(name, cells, kernel):
+    for cell in cells:
+        key_text(cell)
     for i, cell in enumerate(cells):
         cell["id"] = f"{name[:1]}-{i:02d}"
     nb = {"cells": cells, "nbformat": 4, "nbformat_minor": 5, "metadata": {"kernelspec": kernel}}
@@ -271,3 +298,4 @@ That is all the setup the hackathon needs.
 """),
 ]
 save("3_opencode", nb3, BASH)
+assert KEY_USED == set(range(len(KEY_TEXT))), f"unused KEY_TEXT pairs: {set(range(len(KEY_TEXT))) - KEY_USED}"
