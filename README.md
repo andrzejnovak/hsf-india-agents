@@ -26,9 +26,13 @@ and **GLM** (`glm-5`).
   ```
 
 - **A Binder session is temporary.** When it ends, everything in it is gone: files, the saved key, opencode's
-  sessions. Keep your key on your own machine, and push anything you want to keep to git.
+  sessions. Keep your key on your own machine, and copy what you want to keep to `/data/<your-name>` (shared:
+  everyone can read it, so never the key). A new session: Binder → `git clone` → notebook 1's key cell →
+  notebook 3's setup cells → your files from `/data/<your-name>`.
 
-Each notebook asks you to paste the key into its first cell. Never commit it anywhere or paste it into a chat.
+Notebook 1's key cell asks for the key once and saves it privately (`~/.nrp-llm-token`); notebooks 2 and 3 and
+opencode read it from there. Never commit it anywhere or paste it into a chat. Key not accepted? In a notebook
+cell `!rm ~/.nrp-llm-token`, rerun the key cell and the setup check, and restart opencode.
 
 ## The notebooks
 
@@ -41,16 +45,17 @@ Each notebook asks you to paste the key into its first cell. Never commit it any
 `fallback/cms_nano_summary.py` is a reference solution for notebook 3: if the agent has not produced a working
 script by 16:40, copy it in and do the check with it.
 
-## Session plan (90 min)
+## Session plan (90 min, Tue 13 Oct 2026, IST)
 
-| Minutes | What | Mode |
+| Clock | What | Mode |
 |---|---|---|
-| 0–15 | Why: what agents already do in HEP (JFC), and how you would know when they are wrong | talk |
-| 15–20 | Clone the repo, paste the token, run notebook 1's setup check | hands-on |
-| 20–40 | Notebook 1, with short explanations between sections | hands-on |
-| 40–52 | Notebook 2, sections 1–5 | hands-on |
-| 52–82 | Notebook 3; an opencode run on the exercise takes ~5–6 min with DeepSeek | hands-on |
-| 82–90 | What we do Wednesday | talk |
+| 15:30 | Start your session: training link (key), Binder link | hands-on, while it boots |
+| 15:33 | Why: an agent that did physics; how would you know it was wrong? | talk |
+| 15:39 | Setup: clone, notebook 1's key cell, two green ticks | hands-on |
+| 15:49 | Notebook 1: one API call, text you never wrote, no memory → your turn until 16:04 | talk + hands-on |
+| 16:04 | Notebook 2: one tool call, the loop → your turn until 16:18 | talk + hands-on |
+| 16:19 | Notebook 3: opencode on a CMS file, the partial check → your turn until 16:50 | talk + hands-on |
+| 16:50 | What we found, the exit check, saving your work | talk |
 
 Tested end to end on 11 Oct 2026 against NRP (`deepseek-v4-flash`, `glm-5`; opencode 1.18.30), and notebook 3's
 config against opencode 2.0.26 with the Binder's global config: DeepSeek, GLM and qwen3 all answer, the key read

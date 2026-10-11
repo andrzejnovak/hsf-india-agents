@@ -134,8 +134,12 @@ import os, getpass
 from pathlib import Path
 
 KEY_FILE = Path.home() / ".nrp-llm-token"          # private: readable only by you
-if not KEY_FILE.exists() or len(KEY_FILE.read_text().strip()) < 10:      # missing, or Enter pressed on an empty box
-    KEY_FILE.write_text(getpass.getpass("Paste your NRP LLM API key, then press Enter: ").strip())
+while not KEY_FILE.exists() or len(KEY_FILE.read_text().strip()) < 10:   # missing, or nothing pasted
+    key = getpass.getpass("Paste your NRP LLM API key, then press Enter: ").strip()
+    if len(key) < 10:
+        print("That does not look like a key — paste it again.")
+        continue
+    KEY_FILE.write_text(key)
     KEY_FILE.chmod(0o600)
     print("Saved to", KEY_FILE)
 
@@ -217,7 +221,7 @@ for model in ["{MODEL}", "{ALT}"]:
         print(f"{{model:18s}} {{text!r:36s}} prompt tokens: {{r.usage.prompt_tokens}}")
 '''),
     md("""
-Ten more words cost about ten more tokens on both models. But even a bare `"hi"` cost ~97 prompt tokens on
+Nine more words (ten `"hi"` instead of one) cost ten more tokens on both models. But even a bare `"hi"` cost ~97 prompt tokens on
 DeepSeek and ~13 on GLM when we tried (11 Oct 2026): every request carries text you never wrote, added around
 your messages by the server (the **chat template**: role markers, special tokens, and for some models a default
 preamble). You never see it, but the model reads it and you pay for it.
@@ -303,6 +307,19 @@ your key or the model; the [setup check](1_talk_to_a_model.ipynb) in notebook 1 
 save("2_agent_by_hand", nb2, PY)
 
 # ----------------------------------------------------------------------------------------------- notebook 3
+ENV_CELL = r'''
+cd ~/opencode-exercise
+python3 -m venv .venv
+grep -qsxF '.venv/' .gitignore || echo '.venv/' >> .gitignore   # keep it out of git and the agent's searches
+.venv/bin/python -m pip install -q 'uproot>=5' tabulate && echo "environment ready"
+'''
+
+AFTER_AGENT_CELL = r'''
+cd ~/opencode-exercise
+[ -f requirements.txt ] && .venv/bin/python -m pip install -q -r requirements.txt
+.venv/bin/python cms_nano_summary.py --help
+'''
+
 CHECK_CELL = r'''
 cd ~/opencode-exercise
 # 1) the agent's script on the real file; its output goes to summary.txt
@@ -375,13 +392,33 @@ fi
          ('"model": "nrp/gpt-oss"', f'"model": "nrp/{MODEL}"')),
     edit(c[11], ("Try the same task with `gpt-oss` (strong at code) vs `qwen3` (largest context, good for understanding large codebases).",
                  f"Try the same task with `{MODEL}` and `{ALT}`: same tools, same files, different model — compare what each one does.")),
-    *[keep(x) for x in c[12:19]],
     md("""
-### Check the agent's work (NEW)
+### Python environment and the data file — before you start opencode (NEW order)
+
+Two things the exercise needs no matter what the agent writes: a private Python environment for the project
+(a **virtual environment**, `.venv`, so installs cannot clash with the system Python) with `uproot` and
+`tabulate` in it, and a real CMS NanoAOD file to test on — simulated collisions in the CMS NanoAOD format,
+~20 MB from NRP's storage. Run both cells now:
+"""),
+    code(ENV_CELL),
+    keep(c[17]),
+    edit(c[12], ("Getting `Forbidden` or `401` responses once inside opencode? It couldn't read a valid token — re-run the token cell above (with the placeholder replaced), then restart opencode.",
+                 "Getting `Forbidden` or `401` responses once inside opencode? It could not read a valid key: in a notebook cell run `!rm ~/.nrp-llm-token`, rerun notebook 1's key cell, then restart opencode.")),
+    keep(c[13]),
+    md("""
+When the agent says it is done, install anything extra it asked for and check that its script at least starts.
+Calling `.venv/bin/python` uses the project's environment directly, so there is nothing to activate:
+"""),
+    code(AFTER_AGENT_CELL),
+    keep(c[18]),
+    md("""
+### Check the agent's work — a partial check (NEW)
 
 The script ran — but is its output **right**? Here the file itself is the planted truth: we know exactly which
 columns it contains. This cell saves the script's output to `summary.txt` and compares it with the file: is every
-column listed, and does each collection (Muon, Jet, boostedTau, …) get its own group?
+column named, and do four collections (Muon, Jet, Electron, boostedTau) get a heading of their own? It is a
+**partial** check — it does not test that each column appears once or sits in the right group — so look at the
+grouping yourself too.
 """),
     code(CHECK_CELL),
     md("""

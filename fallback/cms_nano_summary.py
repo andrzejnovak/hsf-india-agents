@@ -4,6 +4,8 @@ The fallback for notebook 3's exercise: if your agent has not produced a working
 into ~/opencode-exercise and carry on with the check. Usage: python cms_nano_summary.py <file.root> [--tree Events]
 """
 import argparse
+import os
+import sys
 from collections import defaultdict
 
 import uproot
@@ -36,4 +38,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BrokenPipeError:   # output piped into `head` and cut short: not an error, and not a file problem
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)
