@@ -51,7 +51,12 @@ Each notebook asks you to paste the key into its first cell. Never commit it any
 
 Tested end to end on 11 Oct 2026 against NRP (`deepseek-v4-flash`, `glm-5`; opencode 1.18.30), and notebook 3's
 config against opencode 2.0.26 with the Binder's global config: DeepSeek, GLM and qwen3 all answer, the key read
-from `~/.nrp-llm-token`.
+from `~/.nrp-llm-token`. On 11 Oct all three notebooks also ran inside the workshop Binder session itself
+(opencode 2.0.21, Python 3.14, a training-link key): notebook 1 in ~2 min including the `openai` install,
+notebook 2 in 16 s, notebook 3's opencode exercise in a few minutes and its venv + NanoAOD steps in 11 s.
+
+`/data` in a Binder session is a **shared** persistent volume: every user can read it. Keep work there if you
+like, but never a key.
 
 ## Credits
 
