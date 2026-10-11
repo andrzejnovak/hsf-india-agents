@@ -123,14 +123,34 @@ needed here. We use the two models of the hackathon, **`{MODEL}`** and **`{ALT}`
           f"This notebook uses `{MODEL}` and `{ALT}`, the models of the hackathon; any other row works the same way.")),
     keep(c[2]),
     code("%pip install -q openai   # NEW: the workshop's Binder image has no OpenAI client; elsewhere a no-op"),
-    edit(c[3], LESSON1),
-    keep(c[4]),
+    md("""
+Run the cell below and paste your **LLM API key** (from the training link) into the box that appears, then press
+Enter. *NEW in this version:* the key is saved to a private file, `~/.nrp-llm-token`, readable only by you;
+notebooks 2 and 3 and opencode read it from there, so you paste it **once per session** and it never sits in a
+notebook. A Binder restart wipes the file: just run this cell again.
+"""),
+    code('''
+import os, getpass
+from pathlib import Path
+
+KEY_FILE = Path.home() / ".nrp-llm-token"          # private: readable only by you
+if not KEY_FILE.exists():
+    KEY_FILE.write_text(getpass.getpass("Paste your NRP LLM API key, then press Enter: ").strip())
+    KEY_FILE.chmod(0o600)
+    print("Saved to", KEY_FILE)
+
+# Set both explicitly, replacing anything already in the environment.
+os.environ["OPENAI_API_KEY"] = KEY_FILE.read_text().strip()
+os.environ["OPENAI_API_BASE"] = "https://ellm.nrp-nautilus.io/v1"
+print("Key loaded from", KEY_FILE)
+'''),
     keep(c[5]),
     edit(c[6], ('for model in ["gemma-small", "minimax-m2", "gpt-oss", "qwen3-embedding"]:',
                 f'for model in ["{MODEL}", "{ALT}"]:'),
          ('        if model == "qwen3-embedding":\n            client.embeddings.create(model=model, input=["hi"])\n        else:\n            client.chat.completions.create(\n                model=model, max_tokens=1, messages=[{"role": "user", "content": "hi"}])',
           '        client.chat.completions.create(\n            model=model, max_tokens=1, messages=[{"role": "user", "content": "hi"}])')),
-    edit(c[7], LESSON1),
+    edit(c[7], LESSON1, ("check that you pasted your own token from [nrp.ai/llmtoken](https://nrp.ai/llmtoken) and re-ran both cells",
+                         "check that you pasted your own key from the training-link page: delete the saved one with `!rm ~/.nrp-llm-token`, rerun the key cell, then this one")),
     edit(c[8], ("e.g. `minimax-m2`", f"e.g. `{MODEL}`"), (LESSON1[0] + "#step-2", LESSON1[1] + "#step-2"),
          ("../../images/", "../images/")),
     edit(c[9], ("[Section 4](#4-multi-turn-interactive-chat)", "[Section 5](#5-multi-turn-interactive-chat)"),
@@ -178,9 +198,8 @@ print("tokens in (prompt):", resp.usage.prompt_tokens,
       "| tokens out (completion):", resp.usage.completion_tokens)
 '''),
     md("""
-Two short messages, yet the prompt is billed at many more tokens than the words you wrote: the
-difference is the chat template wrapped around your text. Each model wraps it differently. Send the
-same request to both and compare:
+Two short messages, yet the prompt is billed at more tokens than the words you wrote. Send the same request
+to both models and compare:
 """),
     code(f'''
 for model in ["{MODEL}", "{ALT}"]:
@@ -188,6 +207,21 @@ for model in ["{MODEL}", "{ALT}"]:
     print(f"{{model:18s}} prompt tokens: {{r.usage.prompt_tokens:4d}}   completion tokens: {{r.usage.completion_tokens}}")
 '''),
     md("""
+Where do the extra tokens come from? Send almost nothing — `"hi"` — and then ten of them:
+"""),
+    code(f'''
+for model in ["{MODEL}", "{ALT}"]:
+    for text in ["hi", "hi " * 10]:
+        r = client.chat.completions.create(model=model, max_tokens=5,
+                                           messages=[{{"role": "user", "content": text}}])
+        print(f"{{model:18s}} {{text!r:36s}} prompt tokens: {{r.usage.prompt_tokens}}")
+'''),
+    md("""
+Ten more words cost about ten more tokens on both models. But even a bare `"hi"` cost ~97 prompt tokens on
+DeepSeek and ~13 on GLM when we tried (11 Oct 2026): every request carries text you never wrote, added around
+your messages by the server (the **chat template**: role markers, special tokens, and for some models a default
+preamble). You never see it, but the model reads it and you pay for it.
+
 The completion count includes the model's private **reasoning**: both models think before they answer,
 and that thinking is billed and counted against `max_tokens` too (`msg.reasoning_content` holds it).
 
@@ -238,9 +272,17 @@ c = load("4_agent")["cells"]
 nb2 = [
     edit(c[0], ("# Build a Simple Agent — Tool Calling & the Agent Loop", "# 2 · An agent, by hand — tool calling and the agent loop\n\n" + credit("Build a Simple Agent", "4_agent.html")),
          ("(covered in Lesson 1)", "(covered in [notebook 1](1_talk_to_a_model.ipynb))")),
-    edit(c[1], LESSON1, ("[Setup Check](2_chat.ipynb) in the Chat\nnotebook", "[setup check](1_talk_to_a_model.ipynb) in notebook 1")),
+    md("""
+## 1. Setup
+
+Same client as in notebook 1, with the key notebook 1 saved to `~/.nrp-llm-token` (no such file — say, after a
+Binder restart? run notebook 1's key cell first). If the cell stops with `PermissionDeniedError: 403`, NRP refused
+your key or the model; the [setup check](1_talk_to_a_model.ipynb) in notebook 1 tells you which.
+"""),
     code("%pip install -q openai   # NEW: the workshop's Binder image has no OpenAI client; elsewhere a no-op"),
-    edit(c[2], ("# Tool calling needs a model that supports it. gpt-oss is reliable at tools;\n# qwen3-small also works well. Small models call tools less consistently.\nMODEL = \"gpt-oss\"",
+    edit(c[2], ('# Paste your personal token from https://nrp.ai/llmtoken between the quotes.\nTOKEN = "<paste-your-token-here>"\nif TOKEN.startswith("<"):\n    raise ValueError("Paste your token into TOKEN above, then run this cell again.")',
+                '# The key notebook 1 saved (missing? run notebook 1\'s key cell first).\nfrom pathlib import Path\nTOKEN = (Path.home() / ".nrp-llm-token").read_text()'),
+         ("# Tool calling needs a model that supports it. gpt-oss is reliable at tools;\n# qwen3-small also works well. Small models call tools less consistently.\nMODEL = \"gpt-oss\"",
                 f"# Tool calling needs a model that supports it. {MODEL} and {ALT} both do;\n# so does gpt-oss. Small models call tools less consistently.\nMODEL = \"{MODEL}\"")),
     edit(c[3], ("opencode, Claude Code, and Cursor (previous lesson) are exactly this loop —",
                 "opencode, Claude Code, and Cursor ([next notebook](3_opencode.ipynb)) are exactly this loop —")),
@@ -261,6 +303,21 @@ nb2 = [
 save("2_agent_by_hand", nb2, PY)
 
 # ----------------------------------------------------------------------------------------------- notebook 3
+CHECK_CELL = r'''
+cd ~/opencode-exercise
+.venv/bin/python cms_nano_summary.py nanoout_1.root > summary.txt 2>&1; echo "the script exited with status $?"
+.venv/bin/python - <<'PY'
+import re, uproot
+keys = uproot.open("nanoout_1.root")["Events"].keys()
+out = open("summary.txt").read()
+missing = [k for k in keys if k not in out]
+print(f"{len(keys)} columns in the file; {len(missing)} missing from the summary", missing[:5])
+for group in ["Muon", "Jet", "Electron", "boostedTau"]:
+    has_header = bool(re.search(rf"^\W*{group}\b", out, re.M))   # a line that starts with the group name
+    print(f"{group:11s} has its own group:", "yes" if has_header else "NO - look at summary.txt")
+PY
+'''
+
 c = load("3_agentic")["cells"]
 nb3 = [
     edit(c[0], ("# Agentic Workflows — opencode & IDE Integration", "# 3 · opencode — a coding agent on NRP"),
@@ -269,7 +326,25 @@ nb3 = [
     edit(c[1], ("In [Chat with LLMs](2_chat.ipynb) you **called** NRP's managed LLMs from Python. Now you will point an **agentic coding tool** at the same endpoint",
                 "In [notebook 1](1_talk_to_a_model.ipynb) you **called** NRP's managed LLMs from Python, and in [notebook 2](2_agent_by_hand.ipynb) you ran the agent loop by hand. Now you will point an **agentic coding tool** — that same loop, with file and shell tools — at the same endpoint")),
     edit(c[2], ("and the VS Code steps happen in an IDE — neither fits", "and the optional VS Code steps happen in an IDE — neither fits")),
-    *[keep(x) for x in c[3:10]],
+    *[keep(x) for x in c[3:7]],
+    md("""
+### Configure NRP as the provider
+
+opencode needs two things: where NRP's endpoint is, and your key. Notebook 1 already saved the key to
+`~/.nrp-llm-token`, a private file in your home directory. Terminals in JupyterLab are **separate processes**
+from this notebook, so `export`s here would not reach them; the file is how opencode will find the key (the
+config below points at it). It sits outside the project, so it never ends up in the agent's working files or in
+git. Check that it is there:
+"""),
+    code('''
+if [ -s ~/.nrp-llm-token ]; then
+    echo "Key found in ~/.nrp-llm-token"
+    export OPENAI_API_KEY="$(cat ~/.nrp-llm-token)" OPENAI_API_BASE="https://ellm.nrp-nautilus.io/v1"
+else
+    echo "No key yet: run the key cell at the top of notebook 1 (1_talk_to_a_model.ipynb), then this cell again."
+fi
+'''),
+    keep(c[9]),
     edit(c[10], ('''        "minimax-m2":  { "name": "MiniMax M2"  },
         "gpt-oss":     { "name": "GPT-OSS"     },
         "qwen3":       { "name": "Qwen3 397B"  },
@@ -282,7 +357,16 @@ nb3 = [
          ('"model": "nrp/gpt-oss"', f'"model": "nrp/{MODEL}"')),
     edit(c[11], ("Try the same task with `gpt-oss` (strong at code) vs `qwen3` (largest context, good for understanding large codebases).",
                  f"Try the same task with `{MODEL}` and `{ALT}`: same tools, same files, different model — compare what each one does.")),
-    *[keep(x) for x in c[12:20]],
+    *[keep(x) for x in c[12:19]],
+    md("""
+### Check the agent's work (NEW)
+
+The script ran — but is its output **right**? Here the file itself is the planted truth: we know exactly which
+columns it contains. This cell saves the script's output to `summary.txt` and compares it with the file: is every
+column listed, and does each collection (Muon, Jet, boostedTau, …) get its own group?
+"""),
+    code(CHECK_CELL),
+    keep(c[19]),
     edit(c[20], ("- Switch to `qwen3` and ask it to add unit tests with `pytest`.", f"- Switch to `{ALT}` and ask it to add unit tests with `pytest`.")),
     md(f"""
 ## What opencode sends the model (NEW)
@@ -300,4 +384,4 @@ That is all the setup the hackathon needs.
 """),
 ]
 save("3_opencode", nb3, BASH)
-assert KEY_USED == set(range(len(KEY_TEXT))), f"unused KEY_TEXT pairs: {set(range(len(KEY_TEXT))) - KEY_USED}"
+# (KEY_TEXT pairs whose cells were rewritten above simply go unused)
