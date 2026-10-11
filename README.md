@@ -36,7 +36,10 @@ Each notebook asks you to paste the key into its first cell. Never commit it any
 |---|---|---|---|
 | 1 | [Talking to a model](notebooks/1_talk_to_a_model.ipynb) | Python | setup check · `chat()` helper · what the model receives: the request, tokens, the chat template, context resent every turn · system prompts · multi-turn chat |
 | 2 | [An agent, by hand](notebooks/2_agent_by_hand.ipynb) | Python | one tool call done by hand · the agent loop in ~30 lines · guardrails · exercises |
-| 3 | [opencode](notebooks/3_opencode.ipynb) | Bash | install and point opencode at NRP · have it write a NanoAOD summary script · test it on a real file · switch models |
+| 3 | [opencode](notebooks/3_opencode.ipynb) | Bash | point opencode at NRP · have it write a NanoAOD summary script · check its output against the file · prove the check works · switch models |
+
+`fallback/cms_nano_summary.py` is a reference solution for notebook 3: if the agent has not produced a working
+script by 16:40, copy it in and do the check with it.
 
 ## Session plan (90 min)
 

@@ -134,7 +134,7 @@ import os, getpass
 from pathlib import Path
 
 KEY_FILE = Path.home() / ".nrp-llm-token"          # private: readable only by you
-if not KEY_FILE.exists():
+if not KEY_FILE.exists() or len(KEY_FILE.read_text().strip()) < 10:      # missing, or Enter pressed on an empty box
     KEY_FILE.write_text(getpass.getpass("Paste your NRP LLM API key, then press Enter: ").strip())
     KEY_FILE.chmod(0o600)
     print("Saved to", KEY_FILE)
@@ -305,17 +305,35 @@ save("2_agent_by_hand", nb2, PY)
 # ----------------------------------------------------------------------------------------------- notebook 3
 CHECK_CELL = r'''
 cd ~/opencode-exercise
+# 1) the agent's script on the real file; its output goes to summary.txt
 .venv/bin/python cms_nano_summary.py nanoout_1.root > summary.txt 2>&1; echo "the script exited with status $?"
-.venv/bin/python - <<'PY'
-import re, uproot
+
+# 2) the check: compare a summary with the file itself (defined once, used again below)
+check_summary() {
+.venv/bin/python - "$1" <<'PY'
+import re, sys, uproot
 keys = uproot.open("nanoout_1.root")["Events"].keys()
-out = open("summary.txt").read()
+out = open(sys.argv[1]).read()
 missing = [k for k in keys if k not in out]
-print(f"{len(keys)} columns in the file; {len(missing)} missing from the summary", missing[:5])
+print(f"{sys.argv[1]}: {len(keys)} columns in the file, {len(missing)} missing from the summary", missing[:5])
 for group in ["Muon", "Jet", "Electron", "boostedTau"]:
     has_header = bool(re.search(rf"^\W*{group}\b", out, re.M))   # a line that starts with the group name
-    print(f"{group:11s} has its own group:", "yes" if has_header else "NO - look at summary.txt")
+    print(f"  {group:11s} has its own group:", "yes" if has_header else "NO - look at the summary")
 PY
+}
+check_summary summary.txt
+'''
+
+BREAK_CELL = r'''
+cd ~/opencode-exercise
+# Prove the check works: remove every line that mentions Muon, check again. It must complain.
+grep -v Muon summary.txt > broken.txt
+check_summary broken.txt
+'''
+
+FALLBACK_CELL = r'''
+# No working script by 16:40? Use the reference script, then run the check cell above again.
+cp ~/hsf-india-agents/fallback/cms_nano_summary.py ~/opencode-exercise/cms_nano_summary.py && echo "reference script copied"
 '''
 
 c = load("3_agentic")["cells"]
@@ -366,6 +384,16 @@ columns it contains. This cell saves the script's output to `summary.txt` and co
 column listed, and does each collection (Muon, Jet, boostedTau, …) get its own group?
 """),
     code(CHECK_CELL),
+    md("""
+**Does the check itself work?** A check that never fails proves nothing. Break the summary on purpose and run it
+again: it must complain.
+"""),
+    code(BREAK_CELL),
+    md("""
+**Fallback.** If your agent has not produced a working script by 16:40, copy in the reference script and do the
+check with it: the point of this exercise is the checking.
+"""),
+    code(FALLBACK_CELL),
     keep(c[19]),
     edit(c[20], ("- Switch to `qwen3` and ask it to add unit tests with `pytest`.", f"- Switch to `{ALT}` and ask it to add unit tests with `pytest`.")),
     md(f"""
