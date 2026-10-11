@@ -15,12 +15,18 @@ and **GLM** (`glm-5`).
   for the week and shows your **LLM API key** once: copy it somewhere safe straight away. If you lose it,
   open the training link again; you get a new key, which replaces the old one. The base URL for every
   client is `https://ellm.nrp-nautilus.io/v1`.
-- JupyterLab: on NRP, or on your own machine with Python 3, git and `pip install -r requirements.txt`.
-  Get the notebooks from a JupyterLab terminal (**File → New → Terminal**):
+- JupyterLab on the workshop's BinderHub, which runs on NRP:
+  [launch it](https://binderhub.ssl-hep.org/v2/gh/research-software-collaborations/courses-hsf-india-October2026/binder?gpuModel=&gpuCount=0&cudaMajor=undefined&cudaMinor=undefined&site=nrp&memory=4.0&cpu=1&qos=Guaranteed)
+  (first time: ask at [connect.tempest.uchicago.edu](https://connect.tempest.uchicago.edu) to join the
+  *hsf-india* workshop). opencode is preinstalled there. Any other JupyterLab with Python 3 and git works too
+  (`pip install -r requirements.txt`). Get the notebooks from a JupyterLab terminal (**File → New → Terminal**):
 
   ```bash
   git clone https://github.com/andrzejnovak/hsf-india-agents.git
   ```
+
+- **A Binder session is temporary.** When it ends, everything in it is gone: files, the saved key, opencode's
+  sessions. Keep your key on your own machine, and push anything you want to keep to git.
 
 Each notebook asks you to paste the key into its first cell. Never commit it anywhere or paste it into a chat.
 
@@ -43,7 +49,9 @@ Each notebook asks you to paste the key into its first cell. Never commit it any
 | 52–82 | Notebook 3; an opencode run on the exercise takes ~5–6 min with DeepSeek | hands-on |
 | 82–90 | What we do Wednesday | talk |
 
-Tested end to end on 11 Oct 2026 against NRP (`deepseek-v4-flash`, `glm-5`; opencode 1.18.30).
+Tested end to end on 11 Oct 2026 against NRP (`deepseek-v4-flash`, `glm-5`; opencode 1.18.30), and notebook 3's
+config against opencode 2.0.26 with the Binder's global config: DeepSeek, GLM and qwen3 all answer, the key read
+from `~/.nrp-llm-token`.
 
 ## Credits
 
