@@ -449,4 +449,12 @@ That is all the setup the hackathon needs.
 """),
 ]
 save("3_opencode", nb3, BASH)
+
+# laptop/opencode.json: exactly the settings notebook 3 writes, for opencode on a student's own machine
+# (README, "On your own laptop"): one source, so the two cannot drift apart.
+cfg = next(src(x) for x in nb3 if x["cell_type"] == "code" and "cat > opencode.json" in src(x))
+cfg = cfg.split("<<'JSON'\n", 1)[1].split("\nJSON", 1)[0] + "\n"
+json.loads(cfg)
+(ROOT / "laptop").mkdir(exist_ok=True)
+(ROOT / "laptop" / "opencode.json").write_text(cfg)
 # (KEY_TEXT pairs whose cells were rewritten above simply go unused)

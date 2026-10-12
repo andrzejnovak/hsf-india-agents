@@ -28,11 +28,43 @@ and **GLM** (`glm-5`).
 - **A Binder session is temporary.** When it ends, everything in it is gone: files, the saved key, opencode's
   sessions. Keep your key on your own machine, and copy what you want to keep to `/data/<your-name>` (shared:
   everyone can read it, so never the key). A new session: Binder → `git clone` → notebook 1's key cell →
-  notebook 3's setup cells → your files from `/data/<your-name>`.
+  notebook 3's setup cells → your files from `/data/<your-name>`. opencode on your own laptop stays set up:
+  [three commands](#on-your-own-laptop-optional).
 
 Notebook 1's key cell asks for the key once and saves it privately (`~/.nrp-llm-token`); notebooks 2 and 3 and
 opencode read it from there. Never commit it anywhere or paste it into a chat. Key not accepted? In a notebook
 cell `!rm ~/.nrp-llm-token`, rerun the key cell and the setup check, and restart opencode.
+
+## On your own laptop (optional)
+
+opencode also runs on your own machine with the same key, which is handy for the hackathon, and unlike a Binder
+session it stays set up. macOS, Linux, or Windows inside WSL (`wsl --install` in an administrator PowerShell,
+then open Ubuntu). In a terminal:
+
+```bash
+curl -fsSL https://opencode.ai/install | bash        # 1. install opencode, then open a NEW terminal
+read -rs K && printf %s "$K" > ~/.nrp-llm-token && chmod 600 ~/.nrp-llm-token
+                                                     # 2. paste your key, press Enter (nothing shows)
+mkdir -p ~/.config/opencode && curl -fsSL https://raw.githubusercontent.com/andrzejnovak/hsf-india-agents/main/laptop/opencode.json -o ~/.config/opencode/opencode.json
+                                                     # 3. tell opencode where NRP is
+opencode models nrp                                  # check: lists nrp/deepseek-v4-flash, nrp/glm-5, …
+```
+
+Then `cd` into a project folder and run `opencode`; `/models` switches between DeepSeek and GLM.
+[`laptop/opencode.json`](laptop/opencode.json) holds exactly the settings notebook 3 writes, and the key sits in the
+same private file the notebooks use.
+
+- Step 3 **replaces** opencode settings you already have. Already an opencode user? Copy the `"provider"` block
+  from `laptop/opencode.json` into your own config instead.
+- `opencode: command not found` → the installer could not put it on your PATH: run `~/.opencode/bin/opencode`, or
+  add `export PATH=$HOME/.opencode/bin:$PATH` to your shell's startup file. With Node.js, `npm i -g opencode-ai`
+  also installs it.
+- `bad file reference … .nrp-llm-token does not exist` → step 2 did not run: repeat it. 401/403 → the key was not
+  accepted: repeat step 2 with the key from the training link.
+- Native Windows without WSL should work with `npm i -g opencode-ai`, but we have not tested it.
+
+Tested on 12 Oct 2026 in a fresh home directory with opencode 1.19.0 from the installer (bash; step 2 also in zsh):
+both models answer from any folder.
 
 ## The notebooks
 
