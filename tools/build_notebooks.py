@@ -15,6 +15,15 @@ ROOT = Path(__file__).resolve().parent.parent
 UP = "https://github.com/nrp-nautilus/nrp-training/tree/materials/clariphy"
 SITE = "https://training.nrp-nautilus.io/clariphy/"
 MODEL, ALT = "deepseek-v4-flash", "glm-5"
+# opencode 2 (the workshop Binder's) runs a background service that keeps the settings and key it started with:
+# a fixed key or a new opencode.json is ignored until it stops. Tested 12 Oct with 2.0.26; 1.x has no service.
+SERVICE_STOP = '''
+# NEW: opencode 2 keeps a background service that remembers old settings and keys; stop it, and the
+# next `opencode` start reads this file and your current key (opencode 1.x has no such service)
+if opencode --version | grep -q 'v2\\.'; then
+    opencode service stop > /dev/null 2>&1
+    echo "opencode: background service stopped (the next start reads these settings)"
+fi'''
 
 
 def load(name):
@@ -389,7 +398,8 @@ fi
         "{ALT}":             {{ "name": "GLM-5"             }},
         "gpt-oss":           {{ "name": "GPT-OSS"           }},
         "qwen3":             {{ "name": "Qwen3 397B"        }}'''),
-         ('"model": "nrp/gpt-oss"', f'"model": "nrp/{MODEL}"')),
+         ('"model": "nrp/gpt-oss"', f'"model": "nrp/{MODEL}"'),
+         ("\ncat opencode.json", "\ncat opencode.json\n" + SERVICE_STOP)),
     edit(c[11], ("Try the same task with `gpt-oss` (strong at code) vs `qwen3` (largest context, good for understanding large codebases).",
                  f"Try the same task with `{MODEL}` and `{ALT}`: same tools, same files, different model — compare what each one does.")),
     md("""
@@ -403,7 +413,7 @@ Two things the exercise needs no matter what the agent writes: a private Python 
     code(ENV_CELL),
     keep(c[17]),
     edit(c[12], ("Getting `Forbidden` or `401` responses once inside opencode? It couldn't read a valid token — re-run the token cell above (with the placeholder replaced), then restart opencode.",
-                 "Getting `Forbidden` or `401` responses once inside opencode? It could not read a valid key: in a notebook cell run `!rm ~/.nrp-llm-token`, rerun notebook 1's key cell, then restart opencode.")),
+                 "Getting `Forbidden` or `401` responses once inside opencode? It could not read a valid key: in a notebook cell run `!rm ~/.nrp-llm-token`, rerun notebook 1's key cell, then quit opencode (`/exit`), run `opencode service stop` in the terminal, and start `opencode` again: its background service remembers the old key until it stops.")),
     keep(c[13]),
     md("""
 When the agent says it is done, install anything extra it asked for and check that its script at least starts.

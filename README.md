@@ -33,7 +33,9 @@ and **GLM** (`glm-5`).
 
 Notebook 1's key cell asks for the key once and saves it privately (`~/.nrp-llm-token`); notebooks 2 and 3 and
 opencode read it from there. Never commit it anywhere or paste it into a chat. Key not accepted? In a notebook
-cell `!rm ~/.nrp-llm-token`, rerun the key cell and the setup check, and restart opencode.
+cell `!rm ~/.nrp-llm-token`, rerun the key cell and the setup check, then restart opencode: `/exit`, then
+`opencode service stop` in the terminal, then `opencode` (the Binder's opencode keeps a background service that
+remembers the old key until it stops).
 
 ## On your own laptop (optional)
 
