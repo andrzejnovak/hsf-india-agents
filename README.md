@@ -9,6 +9,16 @@ actually receives (messages, system prompt, context, tokens), has run an agent l
 [opencode](https://opencode.ai) working in their JupyterLab terminal with **DeepSeek** (`deepseek-v4-flash`)
 and **GLM** (`glm-5`).
 
+## Links
+
+| | |
+|---|---|
+| Your LLM key | the organisers' NRP training link (on the [Indico page](https://indico.cern.ch/event/1714663/)); manage keys later at [nrp.ai/llmtoken](https://nrp.ai/llmtoken) |
+| Your session | [Binder: JupyterLab on NRP](https://binderhub.ssl-hep.org/v2/gh/research-software-collaborations/courses-hsf-india-October2026/binder?gpuModel=&gpuCount=0&cudaMajor=undefined&cudaMinor=undefined&site=nrp&memory=4.0&cpu=1&qos=Guaranteed) · login refused? [connect.tempest.uchicago.edu](https://connect.tempest.uchicago.edu) → workshop *hsf-india* |
+| opencode on a laptop | [three commands below](#on-your-own-laptop-optional) · [opencode docs](https://opencode.ai/docs) |
+| NRP's models | [LLM service docs](https://nrp.ai/documentation/userdocs/ai/llm-managed/) · [is a model up?](https://nrp.ai/llm-status/) |
+| The workshop | [Indico](https://indico.cern.ch/event/1714663/) |
+
 ## Before you start
 
 - Open the **training link** from the organisers and log in to NRP. It adds you to the workshop's namespace
