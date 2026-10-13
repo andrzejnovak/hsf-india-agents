@@ -306,12 +306,7 @@ print(chat("And what does it decay to?", system="You are a concise physics tutor
 
 **Next:** [2 · An agent, by hand](2_agent_by_hand.ipynb), where the model starts asking *you* to run things.
 """),  # NEW
-    # Daniel's optional Jupyter AI section, moved from after the setup check to the end: it sat inside the
-    # 10-minute hands-on block of the session.
-    edit(c[8], ("## Optional: Set Up Jupyter AI in JupyterLab\n\nEverything below can also be done",
-                "## Optional extra: Jupyter AI in JupyterLab\n\nEverything in this notebook can also be done"),
-         ("e.g. `minimax-m2`", f"e.g. `{MODEL}`"), (LESSON1[0] + "#step-2", LESSON1[1] + "#step-2"),
-         ("../../images/", "../images/"), ("paste your token into", "paste your key into")),
+    # Daniel's optional Jupyter AI section (his c[8]) is left out: the workshop's Binder has no Jupyter AI extension.
 ]
 save("1_talk_to_a_model", nb1, PY)
 
