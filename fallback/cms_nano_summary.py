@@ -1,7 +1,7 @@
 """List every column (branch) of a CMS NanoAOD file, grouped by collection.
 
-The fallback for notebook 3's exercise: if your agent has not produced a working script by 16:40, copy this one
-into ~/opencode-exercise and carry on with the check. Usage: python cms_nano_summary.py <file.root> [--tree Events]
+The fallback for notebook 3's exercise: if your agent's script is missing or fails, notebook 3's fallback cell
+copies this one into ~/opencode-exercise, so you can carry on with the check. Usage: python cms_nano_summary.py <file.root> [--tree Events]
 """
 import argparse
 import os

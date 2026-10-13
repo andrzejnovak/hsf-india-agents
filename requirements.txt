@@ -1,5 +1,3 @@
 openai>=1.40
-numpy
-matplotlib
-requests
 jupyterlab
+bash_kernel
