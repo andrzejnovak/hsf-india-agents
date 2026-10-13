@@ -128,16 +128,20 @@ needed here. We use the two models of the hackathon, **`{MODEL}`** and **`{ALT}`
 | 4 | System prompts |
 | 5 | Multi-turn chat |
 """),  # NEW title (Daniel's covered sections 5-7 too: embeddings, images, RAG)
-    edit(c[1], ("[Lesson 1](1_intro.html#1-managed-llm-service)", f"[Lesson 1]({SITE}1_intro.html#1-managed-llm-service)"),
-         ("This notebook defaults to `gemma-small` and `minimax-m2`, both good general-purpose choices.",
-          f"This notebook uses `{MODEL}` and `{ALT}`, the models of the hackathon; any other row works the same way.")),
+    # Daniel's catalog table folds away: the two models of the session are named up front
+    edit(c[1], ("Quick reference — the same catalog from [Lesson 1](1_intro.html#1-managed-llm-service), NRP model ID alongside the underlying HuggingFace model:\n\n| Model |",
+                f"This notebook uses `{MODEL}` and `{ALT}`, the models of the hackathon; any other NRP model works the same way. "
+                "Check the [live list](https://nrp.ai/documentation/userdocs/ai/llm-managed/models/) or the "
+                "[LLM status dashboard](https://nrp.ai/llm-status/) if something isn't responding.\n\n"
+                "<details><summary><b>The NRP model catalog</b> (from Lesson 1), NRP model ID alongside the underlying HuggingFace model</summary>\n\n| Model |"),
+         ("*Evaluating* models are under active testing — configuration can change without notice. This notebook defaults to `gemma-small` and `minimax-m2`, both good general-purpose choices. Check the [live list](https://nrp.ai/documentation/userdocs/ai/llm-managed/models/) or the [LLM status dashboard](https://nrp.ai/llm-status/) if something isn't responding.",
+          "*Evaluating* models are under active testing — configuration can change without notice.\n\n</details>")),
     edit(c[2], ("Verify your token", "Verify your key")),
     code(PIP),  # NEW
     md("""
 Run the cell below and paste your **LLM API key** (from the training link) into the box that appears, then press
-Enter. The key is saved to a private file, `~/.nrp-llm-token`, readable only by you;
-notebooks 2 and 3 and opencode read it from there, so you paste it **once per session** and it never sits in a
-notebook. A Binder restart wipes the file: just run this cell again.
+Enter. It is saved to a private file, `~/.nrp-llm-token`, that notebooks 2 and 3 and opencode read too: you paste it
+**once per session**, and it never sits in a notebook. A Binder restart wipes the file; run this cell again.
 """),  # NEW
     code('''
 import os, getpass
@@ -178,17 +182,26 @@ print("Key loaded from", KEY_FILE)
           """    MODEL = ALT = working[0]\n"""
           """    print(f"\\nOnly {MODEL} answered: the rest of this notebook uses it for both models. Carry on.")""")),
     md("""
-**❌ on both models** (`PermissionDeniedError 403` or `AuthenticationError 401`): NRP refused your key. Run
+<details><summary><b>❌ on one or both models?</b></summary>
+
+**Both** (`PermissionDeniedError 403` or `AuthenticationError 401`): NRP refused your key. Run
 `!rm ~/.nrp-llm-token` in a cell, rerun the key cell with the key from the training link, then rerun this check.
 Opening the training link also adds your account to the workshop's namespace, which LLM access needs.
 
-**❌ on one model:** that model is unavailable right now. The check has already switched the rest of this notebook
-to the model that answered, so carry on.
+**One:** that model is unavailable right now. The check has switched the rest of this notebook to the model that
+answered: carry on.
+
+</details>
 """),  # NEW, replaces Daniel's c[7]
     edit(c[9], (" (see [Section 4](#4-multi-turn-interactive-chat))", " (see Section 5 below)"),
          ("[model table](1_intro.html#1-managed-llm-service)", f"[model table]({SITE}1_intro.html#1-managed-llm-service)"),
          ("Reasoning models (`minimax-m2`, `qwen3`, `gpt-oss`) spend", f"Reasoning models (`{MODEL}`, `{ALT}`, `gpt-oss`, `qwen3`) spend"),
-         ("Reasoning models (`minimax-m2`, `qwen3`, `gpt-oss`) think", f"Reasoning models (`{MODEL}`, `{ALT}`, `gpt-oss`, `qwen3`) think")),
+         ("A few parameters worth knowing, including the ones our `chat()` helper below exposes as Python arguments:\n\n| Parameter |",
+          "<details><summary><b>The request parameters</b>, including the ones <code>chat()</code> exposes as Python arguments</summary>\n\n| Parameter |"),
+         ("`0.2` is a good default for factual or code answers. |\n\nDefine a reusable helper that handles both regular and reasoning models.\nReasoning models (`minimax-m2`, `qwen3`, `gpt-oss`) think privately before\nanswering, so they need a larger `max_tokens`.",
+          "`0.2` is a good default for factual or code answers. |\n\n</details>\n\n"
+          f"The helper below handles both regular and reasoning models: `{MODEL}` and `{ALT}` think privately before\n"
+          "answering, so they get a larger `max_tokens`.")),
     edit(c[10], ('def chat(prompt, model="gemma-small", system=None, max_tokens=1200):\n    msgs = []',
                  'def chat(prompt, model=None, system=None, max_tokens=1200):\n'
                  '    model = model or MODEL                 # default: the model the setup check chose\n    msgs = []')),
@@ -253,20 +266,23 @@ for model in [MODEL, ALT]:
     # +10 checked on 13 Oct with both models' own tokenizers (Hugging Face tokenizer.json): "hi" is 1 token,
     # "hi " * 10 is 11, nine " hi" and the trailing space.
     md("""
-Nine more words (ten `"hi"` instead of one) cost ten more tokens on both models: nine for the words, one for the
-space after the last `hi`. But even a bare `"hi"` cost ~97 prompt tokens on
-DeepSeek and ~13 on GLM when we tried (11 Oct 2026): every request carries text you never wrote, added around
-your messages by the server (the **chat template**: role markers, special tokens, and for some models a default
-preamble). You never see it, but the model reads it and you pay for it.
+Nine more words cost ten more tokens on both models: nine for the words, one for the space after the last `hi`.
+But a bare `"hi"` cost ~97 prompt tokens on DeepSeek and ~13 on GLM when we tried (11 Oct 2026): every request
+carries text you never wrote, added around your messages by the server — the **chat template**: role markers,
+special tokens, for some models a default preamble. You never see it; the model reads it, and you pay for it.
 
-The completion count includes the model's private **reasoning**: both models think before they answer,
-and that thinking is billed and counted against `max_tokens` too (`msg.reasoning_content` holds it).
+<details><summary>Also billed: the model's private reasoning</summary>
+
+Both models think before they answer. That thinking is in the completion count and counts against `max_tokens`
+(`msg.reasoning_content` holds it), which is why a small `max_tokens` can come back as an empty reply.
+
+</details>
 
 ### The conversation is resent every turn
 
 To continue a conversation you send the **whole history again**: the model re-reads everything on every
-turn. That history is the model's **context**, and each model has a maximum, its context window. An agent's
-context is its system prompt, its tool descriptions and every tool call and result so far; that is what
+turn. That history is the model's **context**; each model has a maximum, its context window. An agent's
+context is its system prompt, its tool descriptions and every tool call and result so far — that is what
 fills up during a long run.
 """),  # NEW
     code('''
@@ -319,10 +335,9 @@ nb2 = [
     md("""
 ## 1. Setup
 
-Same client as in notebook 1, with the key notebook 1 saved to `~/.nrp-llm-token` (no such file — say, after a
-Binder restart? run notebook 1's key cell first). If one of the two models is down, the cell uses the other one. If it
-stops with `No model answered`, NRP refused your key: the [setup check](1_talk_to_a_model.ipynb) in notebook 1 says
-what to do.
+Same client as in notebook 1, reading the key notebook 1 saved to `~/.nrp-llm-token` (no file, say after a Binder
+restart? run notebook 1's key cell first). If one model is down the cell uses the other; `No model answered` means
+NRP refused your key — notebook 1's [setup check](1_talk_to_a_model.ipynb) says what to do.
 """),  # NEW
     code(PIP),  # NEW
     edit(c[2], ('# Paste your personal token from https://nrp.ai/llmtoken between the quotes.\nTOKEN = "<paste-your-token-here>"\nif TOKEN.startswith("<"):\n    raise ValueError("Paste your token into TOKEN above, then run this cell again.")',
@@ -354,16 +369,29 @@ what to do.
     *[keep(x) for x in c[12:15]],
     edit(c[15], ("# Reasoning models (gpt-oss, minimax-m2, qwen3) expose private", f"# Reasoning models ({MODEL}, {ALT}, gpt-oss) expose private")),
     *[keep(x) for x in c[16:18]],
-    edit(c[18], ("Watch the `[turn N]` trace: the agent looks up the muon mass, feeds it into\n`invariant_mass`, gets ≈ 90.9 GeV, checks the Z with `pdg_lookup`, and only\nthen answers. Nobody told it that plan — it came from the question, the tool\ndescriptions, and the intermediate results.",
-                 "Watch the `[turn N]` trace: the agent feeds the muon mass into `invariant_mass`,\ngets ≈ 90.9 GeV, checks the Z with `pdg_lookup`, and only then answers. Nobody\ntold it that plan — it came from the question, the tool descriptions, and the\nintermediate results. Did it *look up* the muon mass, or take it from memory?\nIn our test runs " + MODEL + " did both: sometimes it called `pdg_lookup`, sometimes\nit used its own value despite the system prompt saying \"always use the tools\".\nA system prompt is a request, not a constraint; run it a few times and compare.")),
+    edit(c[18], ("Watch the `[turn N]` trace: the agent looks up the muon mass, feeds it into\n`invariant_mass`, gets ≈ 90.9 GeV,",
+                 "Watch the `[turn N]` trace: the agent feeds the muon mass into\n`invariant_mass`, gets ≈ 90.9 GeV,"),
+         ("Run it again: the exact sequence may differ (tools may be batched in one turn\nor spread across several). That non-determinism is normal for agents.",
+          "Run it again: the sequence may differ (tools batched in one turn or spread over several), and it may\n"
+          f"take the muon mass from memory instead of calling `pdg_lookup`, despite the system prompt saying\n"
+          f"\"always use the tools\" — in our runs {MODEL} did both. A system prompt is a request, not a constraint.")),
     # On 13 Oct deepseek-v4-flash asked for "tauon" and "tau" in the same first turn in 4 of 5 runs, so the
     # error never got to teach it anything; "on its own" gave "tauon" alone in 6 of 6 (glm-5: 3 of 3 either way).
     edit(c[19], ("\"Try looking up 'tauon' first.\"", "\"Look up 'tauon' first, on its own, and wait for the result.\"")),
-    edit(c[20], ('lookup trick.\n', 'lookup trick. (Without "on its own" in the question, the model often asks for `tauon` and\n'
-                 '`tau` at once, in the same turn: try it, and look at turn 0 of the trace.)\n'),
-         ("Whether you see much depends on the model: `gpt-oss` may\nnot spend much reasoning budget on a lookup this simple — try\n`model=\"minimax-m2\"` for a more talkative trace.",
-                 f"Whether you see much depends on the model: run it again as\n"
-                 f"`run_agent(\"…\", model=\"{ALT}\", show_reasoning=True)` and compare the two traces.")),
+    edit(c[20], ("The first call fails, the error message lists the known names, and the model\nretries with `tau` — self-correction, driven entirely by a good error string.\n"
+                 "There's no alias table mapping \"tauon\" to \"tau\" anywhere in this code — the\nmodel reads the plain-text error, recognizes \"tau\" in the list as the\n"
+                 "particle it meant, and retries. That's genuine reasoning over text, not a\nlookup trick.\n\n"
+                 "`show_reasoning=True` above prints the model's private chain-of-thought, if it\nreturns any, so you can watch that reasoning happen instead of just inferring\n"
+                 "it from the retry. Whether you see much depends on the model: `gpt-oss` may\nnot spend much reasoning budget on a lookup this simple — try\n`model=\"minimax-m2\"` for a more talkative trace.",
+                 "The first call fails, the error message lists the known names, and the model retries with `tau`:\n"
+                 "self-correction, driven entirely by a good error string. There is no alias table mapping \"tauon\" to\n"
+                 "\"tau\" anywhere in this code; the model read the error and reasoned over it.\n\n"
+                 "<details><summary>Two things to try here</summary>\n\n"
+                 "- Without \"on its own\" in the question, the model often asks for `tauon` and `tau` at once, in the same\n"
+                 "  turn, and the error never gets to teach it anything: try it, and look at turn 0 of the trace.\n"
+                 "- `show_reasoning=True` prints the model's private chain-of-thought, if it returns any. How much you see\n"
+                 f"  depends on the model: run it again as `run_agent(\"…\", model=\"{ALT}\", show_reasoning=True)` and compare.\n\n"
+                 "</details>")),
     keep(c[21]),
     edit(c[22], ("**Challenge (take-home) — a retrieval tool.** Wrap the RAG `retrieve()`\nfunction from the Chat notebook as a `search_docs(query)` tool. Your agent can\nthen *decide* when to search documentation — which is precisely how \"agentic\nRAG\" works in production systems.\n\n", ""),
          ("The agentic tools from the previous lesson (opencode, Claude Code) are this", "The agentic tools of the next notebook (opencode, Claude Code) are this"),
@@ -440,8 +468,11 @@ nb3 = [
           credit("Agentic Workflows", "3_agentic.html") + "\n\n**The goal for today:** `opencode` starts in your "
           "JupyterLab terminal and answers you with both models. That is all the setup the hackathon needs. Then "
           "you have it write a script, and you check its work.\n\nRun cells")),
-    edit(c[1], ("In [Chat with LLMs](2_chat.ipynb) you **called** NRP's managed LLMs from Python. Now you will point an **agentic coding tool** at the same endpoint",
-                "In [notebook 1](1_talk_to_a_model.ipynb) you **called** NRP's managed LLMs from Python, and in [notebook 2](2_agent_by_hand.ipynb) you ran the agent loop by hand. Now you will point an **agentic coding tool** — that same loop, with file and shell tools — at the same endpoint")),
+    edit(c[1], ("In [Chat with LLMs](2_chat.ipynb) you **called** NRP's managed LLMs from Python. Now you will point an **agentic coding tool** at the same endpoint and have it plan, write, and run code autonomously on your behalf.\n\n"
+                "The key teaching point is **portability**: anything that speaks an OpenAI-compatible `base_url` works against NRP, so the agentic workflow you already use locally runs unchanged against NRP's managed inference — no API key handoff theater, no per-user billing.",
+                "In [notebook 1](1_talk_to_a_model.ipynb) you **called** the model from Python; in [notebook 2](2_agent_by_hand.ipynb) you ran the agent loop by hand. "
+                "Now the same loop with file and shell tools, an **agentic coding tool**, pointed at the same endpoint: it plans, writes and runs code for you. "
+                "Anything that speaks an OpenAI-compatible `base_url` works against NRP, so an agent you already use on your laptop runs unchanged here.")),
     md("""
 > **Where to run what:** the setup steps below are notebook cells (Shift+Enter). `opencode` itself is an interactive
 > program, so it runs in a JupyterLab terminal: those steps are marked 🖥️ **Terminal step**.
@@ -451,15 +482,20 @@ nb3 = [
 """),  # NEW, replaces Daniel's c[2] (it also covered his VS Code steps, which this session skips)
     edit(c[3], ("## Part 1: opencode", "## Set up opencode")),
     edit(c[4], ("curl -fsSL https://opencode.ai/install | bash", "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path")),
-    *[keep(x) for x in c[5:7]],
+    edit(c[5], ("opencode scopes file writes to the nearest `.git` directory, not simply your\nshell's current directory — without one, it can fall back to a much wider\n"
+                "default and write generated files somewhere you don't expect (a\n[known opencode behavior](https://github.com/anomalyco/opencode/issues/15192),\n"
+                "not something specific to this training). So the exercise gets its own fresh\nfolder, turned into a git project:",
+                "The exercise gets its own folder, made a git project: opencode scopes its file writes to the nearest `.git`\n"
+                "directory ([a known behavior](https://github.com/anomalyco/opencode/issues/15192)), and without one it can write\n"
+                "generated files somewhere you don't expect.")),
+    keep(c[6]),
     md("""
 ### Configure NRP as the provider
 
-opencode needs two things: where NRP's endpoint is, and your key. Notebook 1 already saved the key to
-`~/.nrp-llm-token`, a private file in your home directory. Terminals in JupyterLab are **separate processes**
-from this notebook, so `export`s here would not reach them; the file is how opencode will find the key (the
-config below points at it). It sits outside the project, so it never ends up in the agent's working files or in
-git. Check that it is there:
+opencode needs two things: where NRP's endpoint is, and your key. The key is in `~/.nrp-llm-token` from notebook 1.
+JupyterLab terminals are separate processes from this notebook, so an `export` here would not reach them; the file is
+how opencode finds the key, and it stays outside the project, so it never ends up in the agent's files or in git.
+Check that it is there:
 """),  # NEW
     code("""
 if [ -s ~/.nrp-llm-token ]; then
@@ -468,7 +504,8 @@ else
     echo "No key yet: run the key cell at the top of notebook 1 (1_talk_to_a_model.ipynb), then this cell again."
 fi
 """),  # NEW
-    keep(c[9]),
+    edit(c[9], ("Then write the NRP provider as a **project config** — an `opencode.json` inside the exercise folder. opencode merges it with any global config you have, with the project taking priority, so your own `~/.config/opencode` settings are left alone and this only applies inside `~/opencode-exercise`. (See the [full client-config reference](https://nrp.ai/documentation/userdocs/ai/llm-managed/client-configs/) for opencode, VS Code, Claude Code, and more.)",
+                "Then the NRP provider as a **project config**, an `opencode.json` in the exercise folder: it applies only inside `~/opencode-exercise` and takes priority over any global opencode config of yours, which is left alone. (The [client-config reference](https://nrp.ai/documentation/userdocs/ai/llm-managed/client-configs/) has the same for VS Code, Claude Code and more.)")),
     edit(c[10], ("""        "minimax-m2":  { "name": "MiniMax M2"  },
         "gpt-oss":     { "name": "GPT-OSS"     },
         "qwen3":       { "name": "Qwen3 397B"  },
@@ -480,7 +517,8 @@ fi
         "qwen3":             {{ "name": "Qwen3 397B"        }}"""),
          ('"model": "nrp/gpt-oss"', f'"model": "nrp/{MODEL}"'),
          ("\ncat opencode.json", "\ncat opencode.json\n" + SERVICE_STOP)),
-    edit(c[11], ("read your token from that file", "read your key from that file"), ("with *your* token", "with *your* key"),
+    edit(c[11], ("`{file:~/.nrp-llm-token}` tells opencode to read your token from that file when it starts — so opencode works in **any** terminal, with nothing to export first — and with *your* token, even on the\ntraining hub, where a shared `OPENAI_API_KEY` may already be set.",
+                 "`{file:~/.nrp-llm-token}` makes opencode read your key from that file when it starts: it works in any terminal, with\nnothing to export, and with *your* key even where a shared `OPENAI_API_KEY` is set."),
          ("press **Ctrl+P** and select *Switch models* to change the active model mid-session.",
           "type `/models`, then pick one, to change the active model mid-session."),
          ("Try the same task with `gpt-oss` (strong at code) vs `qwen3` (largest context, good for understanding large codebases).",
@@ -488,10 +526,9 @@ fi
     md("""
 ### Python environment and the data file — before you start opencode
 
-Two things the exercise needs no matter what the agent writes: a private Python environment for the project
-(a **virtual environment**, `.venv`, so installs cannot clash with the system Python) with `uproot` and
-`tabulate` in it, and a real CMS NanoAOD file to test on — simulated collisions in the CMS NanoAOD format,
-~20 MB from NRP's storage. Run both cells now:
+Two things the exercise needs whatever the agent writes: a private Python environment for the project (a
+**virtual environment**, `.venv`, so installs cannot clash with the system Python) with `uproot` and `tabulate`,
+and a real CMS NanoAOD file to test on, ~20 MB of simulated collisions from NRP's storage. Run both cells now:
 """),  # NEW
     code(ENV_CELL),  # NEW
     edit(c[17], ("# Pull the same NanoAOD file from NRP S3 — no proxy, no credentials (~20 MB).",
@@ -501,18 +538,17 @@ Two things the exercise needs no matter what the agent writes: a private Python 
 ### What opencode sends the model
 
 opencode is notebook 2's loop with more tools. Every turn it sends the model a `messages` list like the
-ones you built by hand: its own long **system prompt** (how to behave, how to edit files), the **schemas
-of its tools** (read, edit, bash, search, …), your request, and every tool call and result so far. Your
-project files reach the model only through those tool results: it reads what it chooses to read.
-
-That is why the context fills up in a long session (`/compact` summarises it), why the folder matters,
-and why the same prompt behaves differently with `{MODEL}` and `{ALT}`. Watch for those tool calls while it works.
+ones you built by hand: its own long **system prompt**, the **schemas of its tools** (read, edit, bash,
+search, …), your request, and every tool call and result so far. Your files reach the model only through
+those tool results: it reads what it chooses to read. That is why the context fills up in a long session
+(`/compact` summarises it), and why the same prompt behaves differently with `{MODEL}` and `{ALT}`.
+Watch for those tool calls while it works.
 """),  # NEW, before the launch: it explains what students watch while opencode runs
     edit(c[12], ("Getting `Forbidden` or `401` responses once inside opencode? It couldn't read a valid token — re-run the token cell above (with the placeholder replaced), then restart opencode.",
-                 "Getting `Forbidden` or `401` responses once inside opencode? It could not use your key. Quit opencode "
-                 "(`/exit`), then in the terminal run `rm ~/.nrp-llm-token` (no `!` here: that is only for notebook cells), "
-                 "rerun notebook 1's key cell, run `opencode service stop`, and start `opencode` again: its background "
-                 "service remembers the old key until it stops."),
+                 "<details><summary><b>Getting <code>Forbidden</code> or <code>401</code> inside opencode?</b></summary>\n\n"
+                 "It could not use your key. Quit opencode (`/exit`), then in the terminal run `rm ~/.nrp-llm-token` (no `!` "
+                 "here: that is only for notebook cells), rerun notebook 1's key cell, run `opencode service stop`, and start "
+                 "`opencode` again: its background service remembers the old key until it stops.\n\n</details>"),
          ("The prompt is active as soon as opencode opens — just type your task and press Enter. (`/` opens the slash-command menu for things like `/models` or `/clear`, not the prompt itself.) Paste the following task:",
           f"The prompt is active as soon as opencode opens. First type `hi` and press Enter: you should get a reply. "
           f"Then type `/models`, pick `{ALT}`, and say `hi` again. A reply from both models is the setup the hackathon "
@@ -534,13 +570,21 @@ done after ~20 min? The fallback cell is a little further down.)
     edit(c[18], ("cd ~/opencode-exercise\n",
                  "cd ~/opencode-exercise\n# The first 40 lines. A \"Broken pipe\" error after them is head stopping early, "
                  "not a problem with the file.\n")),
-    keep(c[19]),
+    edit(c[19], ("Common ways a first attempt falls over — worth feeding straight back to opencode rather than fixing by hand:\n\n"
+                 "- Treating every branch as flat when the jagged collection branches need `n<Collection>` to interpret.\n"
+                 "- Crashing on branches with no title instead of printing a blank description.\n"
+                 "- Assuming a fixed set of collections rather than discovering them from the file.\n\n"
+                 "If it fails, paste the traceback into opencode and let it debug — watching an agent iterate on a real error is the point of the exercise.",
+                 "If it fails, paste the traceback into opencode and let it debug: watching an agent iterate on a real error is the point of the exercise.\n\n"
+                 "<details><summary>Common ways a first attempt falls over</summary>\n\n"
+                 "- Treating every branch as flat when the jagged collection branches need `n<Collection>` to interpret.\n"
+                 "- Crashing on branches with no title instead of printing a blank description.\n"
+                 "- Assuming a fixed set of collections rather than discovering them from the file.\n\n</details>")),
     md("""
 ### Agent not done after ~20 min, or its script still fails? Run this instead of waiting
 
-The point of this exercise is the checking. This cell puts the reference script in place of a script that is
-missing or fails on the file, and keeps the agent's as `cms_nano_summary.agent.py`. If the agent's script runs, the
-cell leaves it alone.
+The point of this exercise is the checking. This cell puts the reference script in place of one that is missing or
+fails on the file, and keeps the agent's as `cms_nano_summary.agent.py`; a script that runs is left alone.
 """),  # NEW
     code(FALLBACK_CELL),  # NEW
     md("""
