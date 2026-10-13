@@ -293,7 +293,8 @@ print(chat("And what does it decay to?", system="You are a concise physics tutor
                  'ROLE  = "Teaching assistant"   # or "CMS expert" or "Technical coder" (the keys of SYSTEMS below)\n'
                  'CHAT_MODEL = MODEL            # the setup check\'s model; or ALT, "gpt-oss", "qwen3"'),
          ('print(f"Chatting as: {ROLE} ({MODEL}).', 'print(f"Chatting as: {ROLE} ({CHAT_MODEL}).'),
-         ("        model=MODEL, max_tokens=1000,", "        model=CHAT_MODEL, max_tokens=1000,"),
+         # 1000 tokens: on 13 Oct deepseek-v4-flash spent them all thinking and the first reply came back empty
+         ("        model=MODEL, max_tokens=1000,", "        model=CHAT_MODEL, max_tokens=2000,"),
          ('    print(f"AI: {reply}\\n")', '    print(f"AI: {reply}\\n   ({r.usage.prompt_tokens} prompt tokens sent this turn)\\n")')),
     md(f"""
 ## Takeaways
@@ -360,8 +361,12 @@ what to do.
     *[keep(x) for x in c[16:18]],
     edit(c[18], ("Watch the `[turn N]` trace: the agent looks up the muon mass, feeds it into\n`invariant_mass`, gets ≈ 90.9 GeV, checks the Z with `pdg_lookup`, and only\nthen answers. Nobody told it that plan — it came from the question, the tool\ndescriptions, and the intermediate results.",
                  "Watch the `[turn N]` trace: the agent feeds the muon mass into `invariant_mass`,\ngets ≈ 90.9 GeV, checks the Z with `pdg_lookup`, and only then answers. Nobody\ntold it that plan — it came from the question, the tool descriptions, and the\nintermediate results. Did it *look up* the muon mass, or take it from memory?\nIn our test runs " + MODEL + " did both: sometimes it called `pdg_lookup`, sometimes\nit used its own value despite the system prompt saying \"always use the tools\".\nA system prompt is a request, not a constraint; run it a few times and compare.")),
-    keep(c[19]),
-    edit(c[20], ("Whether you see much depends on the model: `gpt-oss` may\nnot spend much reasoning budget on a lookup this simple — try\n`model=\"minimax-m2\"` for a more talkative trace.",
+    # On 13 Oct deepseek-v4-flash asked for "tauon" and "tau" in the same first turn in 4 of 5 runs, so the
+    # error never got to teach it anything; "on its own" gave "tauon" alone in 6 of 6 (glm-5: 3 of 3 either way).
+    edit(c[19], ("\"Try looking up 'tauon' first.\"", "\"Look up 'tauon' first, on its own, and wait for the result.\"")),
+    edit(c[20], ('lookup trick.\n', 'lookup trick. (Without "on its own" in the question, the model often asks for `tauon` and\n'
+                 '`tau` at once, in the same turn: try it, and look at turn 0 of the trace.)\n'),
+         ("Whether you see much depends on the model: `gpt-oss` may\nnot spend much reasoning budget on a lookup this simple — try\n`model=\"minimax-m2\"` for a more talkative trace.",
                  f"Whether you see much depends on the model: run it again as\n"
                  f"`run_agent(\"…\", model=\"{ALT}\", show_reasoning=True)` and compare the two traces.")),
     keep(c[21]),

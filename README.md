@@ -122,7 +122,10 @@ On 13 Oct, after the review fixes, without an NRP key: notebooks 1 and 2 ran aga
 that skips the tool, a loop that never ends), and notebook 3 ran in a Bash kernel with opencode 2.0.26 on the real
 file, with staged scripts in place of the agent's (a correct one, the lowercase-collection bug, other heading
 styles, none, one that crashes). The settings cell's `opencode service stop` was also checked on 1.19.0 (it prints
-its usage and starts nothing). Real model replies were not re-tested that day.
+its usage and starts nothing). Then, with a real key: notebooks 1 and 2 ran without an error against NRP (two ticks;
+`"hi"` 97 → 107 prompt tokens on DeepSeek, 13 → 23 on GLM); both models answered through opencode 2.0.26 and 1.19.0
+with notebook 3's settings; DeepSeek wrote the exercise script from the notebook's task in 84 s, and the check passed
+on it (0 of 2,368 columns missing, four groups) and caught the broken summary.
 
 `/data` in a Binder session is a **shared** persistent volume: every user can read it. Keep work there if you
 like, but never a key.
