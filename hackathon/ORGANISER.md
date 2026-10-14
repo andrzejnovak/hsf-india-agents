@@ -13,8 +13,11 @@ cd ~/hsf-india-agents && git pull && cd hackathon
 python3 -m sbh check --task gauss_peak --submission examples/stub_submission --dataset datasets/public/seed_000 --determinism   # PASS
 python3 -m sbh check --task gauss_peak --submission examples/naive_fit --dataset datasets/public/seed_000 --determinism        # PASS, mH ≈ 125.2 ± 0.4
 python3 toy_suite.py suites/t --n 6 --seed 3 && python3 score_suite.py examples/naive_fit suites/t --plot r.png              # slope ≈ 1, FDR 0
+python3 explore.py suites/t/seed_001 --out e.png && python3 make_plots.py --fast --out /tmp/figs                              # the pictures regenerate
 bash new_team.sh test && ls ~/hack-test                                                                                       # then rm -rf ~/hack-test
 ```
+The slides' figures are `figs/*.png`, made by `make_plots.py` (the full run, with the two naive-fit figures, takes
+about 90 s); the deck copies them as `assets/hack_*.png`.
 Both `sbh check` runs need scipy in the Binder's `python3` (the kernel env), which the naive fit imports; the
 self-check runs the submission as user `nobody` under `setpriv`, so the interpreter must be world-readable (a
 conda env is).

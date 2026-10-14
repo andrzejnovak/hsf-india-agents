@@ -5,3 +5,5 @@ __pycache__/
 # hackathon: the self-check and the scorer write here; suites you make yourself
 hackathon/work/
 hackathon/suites/
+hackathon/*.png
+hackathon/out/

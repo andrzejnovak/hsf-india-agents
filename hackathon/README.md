@@ -44,6 +44,39 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: task files, the pub
    cp -r ~/hack-<team>/submission /data/hackathon/<team-name>
    ```
 
+## The physics, in five pictures
+
+`python3 make_plots.py` draws all of them from the toy (`figs/`; `--fast` skips the two that fit 60 datasets).
+
+1. **[`figs/data_public.png`](figs/data_public.png) — the data.** Each event is one number, a reconstructed mass in
+   GeV. Background falls off exponentially; a particle of mass m<sub>H</sub> shows as a Gaussian bump 2 GeV wide. The
+   MC templates in `mc/` (a background shape, signal shapes at 115…135 GeV) are what you fit with.
+2. **[`figs/mu.png`](figs/mu.png) — the signal strength μ.** How many signal events, relative to the Standard Model
+   expectation at that mass (`mc/cross_sections.json`: 120 events at 125 GeV for μ = 1). μ = 0 is no signal, one
+   dataset in five. The *significance* is how unlikely the bump is from background alone, in σ; `discovery: true`
+   is a claim that it is real (Z ≥ 5), and claiming it on an empty dataset is a false discovery.
+3. **[`figs/moves.png`](figs/moves.png) — the truth moves.** Every sealed dataset has its own planted mass between
+   115 and 135 GeV, its own μ and background normalisation. Answer 125 every time and your slope is 0.
+4. **[`figs/control.png`](figs/control.png) — the detector response.** The data's masses carry a hidden *scale*
+   (every mass multiplied by a number within ±1.5 % of 1) and extra *smearing* (up to 1.5 % resolution). The control
+   sample, a known peak (the Z boson at 91.19 GeV, 200k events), carries the same response; the MC templates carry
+   none. Measure the shift and the widening there, then correct your fit: without it, the mass is biased by up to
+   2 GeV with an error bar of a few hundred MeV.
+5. **[`figs/pulls.png`](figs/pulls.png) and [`figs/recovery.png`](figs/recovery.png) — calibration.**
+   pull = (reported − planted) / your error bar; a calibrated pipeline has pulls of width 1. The naive fit on 30
+   datasets follows the truth (slope ≈ 1) with pulls of width 0.9 without the response and 4.0 with it: that is the
+   under-coverage the sealed run fails you on. Quoting a huge error bar to be safe fails too.
+
+## Debugging
+
+```bash
+bash ~/hack-<team>/submission/run.sh suites/mine/seed_003 out && cat out/RESULT.json    # one dataset by hand
+python3 explore.py suites/mine/seed_003 --result out/RESULT.json --out seed_003.png     # the data, the truth, your answer, the control peak
+```
+`score_suite.py` prints a per-dataset table (status, pulls, and the last lines of `run.sh`'s output when it fails);
+the self-check prints the traceback of a failed run. `seed_000` of any suite is the public truth, so a pipeline that
+is right there and wrong elsewhere has hard-coded something.
+
 ## What gets scored (EVAL_CONTRACT.md §3, in one line each)
 
 - **sensitivity**: slope of reported vs planted — 1 is a measurement, 0 is a memorised constant (the stub scores 0).
