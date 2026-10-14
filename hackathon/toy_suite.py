@@ -144,6 +144,30 @@ def generate(truth, rng, d: Path):
     (d / "truth.json").write_text(json.dumps(truth, indent=1))
 
 
+def build(out: Path, n: int = 10, seed: int = 1, response: bool = True, design=None, log=print):
+    """Write seed_000 (the public truth) and n - 1 drawn datasets under out/, truth.json beside each and a
+    manifest.json listing them; returns the list of truths (seed name included)."""
+    if out.exists():
+        raise SystemExit(f"{out} exists; pick another name")
+    priors = dict(PRIORS)
+    if not response:
+        priors["scale_range"], priors["smear_range"] = [1.0, 1.0], [0.0, 0.0]
+    n = len(design) + 1 if design else n
+    truths = []
+    for i in range(n):
+        rng = np.random.default_rng([seed, i])
+        truth = dict(PUBLIC_TRUTH) if i == 0 else draw_truth(rng, priors, design[i - 1] if design else None)
+        d = out / f"seed_{i:03d}"
+        generate(truth, rng, d)
+        truths.append({"seed": d.name, **truth})
+        tag = "public" if i == 0 else f"Z_exp={truth['expected_significance']:.1f}"
+        log(f"{d.name}  mH={truth['mH']:.2f}  mu={truth['mu']:.2f}  scale={truth['scale']:.4f}  "
+            f"smear={truth['smear']:.4f}  {tag}")
+    (out / "manifest.json").write_text(json.dumps({"task": "gauss_peak", "master_seed": seed,
+                                                   "response": response, "seeds": truths}, indent=1))
+    return truths
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("out", help="suite directory to create")
@@ -153,26 +177,8 @@ def main():
     ap.add_argument("--design", help="JSON list of truths to fix, one per sealed seed (unset keys are drawn)")
     a = ap.parse_args()
     out = Path(a.out)
-    if out.exists():
-        raise SystemExit(f"{out} exists; pick another name")
-    priors = dict(PRIORS)
-    if a.no_response:
-        priors["scale_range"], priors["smear_range"] = [1.0, 1.0], [0.0, 0.0]
-    design = json.loads(a.design) if a.design else None
-    n = len(design) + 1 if design else a.n
-    truths = []
-    for i in range(n):
-        rng = np.random.default_rng([a.seed, i])
-        truth = dict(PUBLIC_TRUTH) if i == 0 else draw_truth(rng, priors, design[i - 1] if design else None)
-        d = out / f"seed_{i:03d}"
-        generate(truth, rng, d)
-        truths.append({"seed": d.name, **truth})
-        tag = "public" if i == 0 else f"Z_exp={truth['expected_significance']:.1f}"
-        print(f"{d.name}  mH={truth['mH']:.2f}  mu={truth['mu']:.2f}  scale={truth['scale']:.4f}  "
-              f"smear={truth['smear']:.4f}  {tag}")
-    (out / "manifest.json").write_text(json.dumps({"task": "gauss_peak", "master_seed": a.seed,
-                                                   "response": not a.no_response, "seeds": truths}, indent=1))
-    print(f"wrote {n} datasets under {out}/ (truth.json beside each; seed_000 is at the public truth)")
+    truths = build(out, a.n, a.seed, not a.no_response, json.loads(a.design) if a.design else None)
+    print(f"wrote {len(truths)} datasets under {out}/ (truth.json beside each; seed_000 is at the public truth)")
 
 
 if __name__ == "__main__":

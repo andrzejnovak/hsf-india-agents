@@ -23,4 +23,5 @@ workspace: $W
 next:
   cd $W && opencode          # paste the prompt from the README, or write submission/ yourself
   cd $HERE && python3 -m sbh check --task gauss_peak --submission $W/submission --dataset datasets/public/seed_000 --determinism
+  cd $HERE && bash submit.sh $1          # when it passes: the self-check again, then the copy to the drop folder
 EOF

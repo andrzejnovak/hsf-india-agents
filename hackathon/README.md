@@ -53,10 +53,13 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: task files, the pub
    python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png
    ```
    Change `--seed` for a fresh suite. The sealed suite is drawn from the same priors with a seed you don't have.
-5. **Submit** by the deadline: copy `submission/` (code only, no data) to the shared folder:
+5. **Submit** by the deadline, from this folder:
    ```bash
-   cp -r ~/hack-<team>/submission /data/hackathon/<team-name>
+   bash submit.sh <team-name>        # runs the self-check, then copies ~/hack-<team-name>/submission (code only) to /data/hackathon/<team-name>
    ```
+   Submit as often as you like; each time replaces the last, and the last one before the deadline is the one
+   that gets run. A submission that fails the self-check is not copied (`--no-check` if the check cannot run on
+   your machine; the organisers run it anyway).
 
 ## The physics, in five pictures
 
@@ -111,6 +114,9 @@ is right there and wrong elsewhere has hard-coded something.
 - `run.sh` must be deterministic (fix your random seeds) and read only `<dataset_dir>` and its own folder.
 - Nothing from the public truth (mass 125, μ = 1, nominal response) may be hard-coded: the sealed datasets differ in all of it.
 - Teams of three or so. Model variance is real: run the agent twice before you trust a design.
+- The leaderboard: level 0, 1 or 2 as above (level 1: slope of m<sub>H</sub> ≥ 0.8 with the self-check passing and every
+  dataset run; level 2: pull widths within [0.7, 1.4] for both and no false discovery), then closest to slope 1 and
+  width 1 first. Level 3 is judged when you present: show the prompts and the runs.
 
 ## Schedule
 
@@ -118,5 +124,5 @@ is right there and wrong elsewhere has hard-coded something.
 |---|---|
 | start | setup, both commands above pass |
 | start + 30 min | first self-check passes on your own pipeline (the stub does not count) |
-| deadline | `submission/` in `/data/hackathon/<team-name>` |
-| after | the sealed run: recovery plots and the leaderboard, one slide per team |
+| deadline | `bash submit.sh <team-name>` has run; the last submission counts |
+| after | the sealed run: every submission on 20 datasets nobody has seen; recovery plots and the leaderboard, one slide per team |
