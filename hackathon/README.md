@@ -22,10 +22,15 @@ Read, in this order: [`PROMPT.md`](PROMPT.md) (the task), [`DATASET.md`](DATASET
 The metric: **sensitivity** (the slope of reported vs planted; 1 is a measurement, 0 is a constant) while keeping
 **calibration** (the width of your pulls with your own error bars; 1 is honest, 4 is the plain fit, 0.3 is padded).
 
-## Setup (2 minutes, in a JupyterLab terminal)
+## Setup (2 minutes, anywhere with git and Python 3)
+
+Everything is in this repository, the public dataset included; the data is simulated, so nothing else is
+needed. A Binder session from Tuesday works, and so does your laptop (`pip install numpy scipy matplotlib` if
+they are missing: numpy and scipy are what submissions may use, matplotlib draws the pictures).
 
 ```bash
-cd ~/hsf-india-agents && git pull && cd hackathon
+git clone https://github.com/andrzejnovak/hsf-india-agents.git   # or: cd ~/hsf-india-agents && git pull
+cd hsf-india-agents/hackathon
 python3 -m sbh check --task gauss_peak --submission examples/stub_submission --dataset datasets/public/seed_000 --determinism
 ```
 The last line must say `determinism (second clean run): PASS`. Then make your team's workspace:
@@ -53,13 +58,18 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: task files, the pub
    python3 score_suite.py ~/hack-<team>/submission suites/mine --plot recovery.png
    ```
    Change `--seed` for a fresh suite. The sealed suite is drawn from the same priors with a seed you don't have.
-5. **Submit** by the deadline, from this folder:
+5. **Submit**: your workspace is a git repository; push it to GitHub and post one line on the
+   [submissions issue](https://github.com/andrzejnovak/hsf-india-agents/issues/1):
    ```bash
-   bash submit.sh <team-name>        # runs the self-check, then copies ~/hack-<team-name>/submission (code only) to /data/hackathon/<team-name>
+   cd ~/hack-<team> && git add -A && git commit -m "our submission" && git push    # a public repository of yours (git remote add origin <url> the first time)
+   cd ~/hsf-india-agents/hackathon && bash submit.sh <team-name> <git url>          # the self-check, is it pushed, then the line to post
    ```
-   Submit as often as you like; each time replaces the last, and the last one before the deadline is the one
-   that gets run. A submission that fails the self-check is not copied (`--no-check` if the check cannot run on
-   your machine; the organisers run it anyway).
+   The line is `<team-name>: <git url> @ <commit>`; `submit.sh` posts it for you when `gh` is logged in, else
+   paste it as a comment. Submit as often as you like: a new comment replaces your earlier one, and the last
+   comment per team before the deadline is the commit that gets run. A submission that fails the self-check
+   is not submitted (`--no-check` if the check cannot run on your machine; the organisers run it anyway).
+   Pushing from a Binder session needs a GitHub token as the password (github.com → Settings → Developer
+   settings → Personal access tokens); from your laptop it is your usual push.
 
 ## The physics, in five pictures
 
@@ -118,11 +128,10 @@ is right there and wrong elsewhere has hard-coded something.
   dataset run; level 2: pull widths within [0.7, 1.4] for both and no false discovery), then closest to slope 1 and
   width 1 first. Level 3 is judged when you present: show the prompts and the runs.
 
-## Schedule
+## The day
 
-| when | what |
-|---|---|
-| start | setup, both commands above pass |
-| start + 30 min | first self-check passes on your own pipeline (the stub does not count) |
-| deadline | `bash submit.sh <team-name>` has run; the last submission counts |
-| after | the sealed run: every submission on 20 datasets nobody has seen; recovery plots and the leaderboard, one slide per team |
+1. Setup: the two commands above pass; teams and workspaces.
+2. Build, self-check, score yourself; submit early and again whenever it gets better.
+3. The deadline is announced in the room; the last comment per team on the issue before it counts.
+4. The sealed run: every submission on 20 datasets nobody has seen; recovery plots and the leaderboard, one
+   slide per team, then each team on how it got there (level 3 is judged there).

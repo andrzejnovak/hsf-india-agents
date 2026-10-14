@@ -26,32 +26,36 @@ world-readable (a conda env is).
 ## Before the start
 
 ```bash
-mkdir -p /data/hackathon && chmod 1777 /data/hackathon      # the drop folder: everyone writes their own team folder, nobody deletes another's
-python3 -c 'import secrets; print(secrets.randbelow(2**31))' # the sealed seed: keep it to yourself until the leaderboard is up
+python3 -c 'import secrets; print(secrets.randbelow(2**31))'   # the sealed seed: keep it to yourself until the leaderboard is up
 ```
-Students submit with `bash submit.sh <team-name>` (the self-check, then a code-only copy to
-`/data/hackathon/<team-name>` with a `SUBMITTED.txt`: time, user, file hash). Everyone can read `/data`; that is
-fine, the sealed datasets are what nobody has.
+Everything the students need is in this repository (the data is simulated, the public dataset is committed),
+so they can work in a Binder session or on a laptop. They submit by pushing their team workspace (a git
+repository `new_team.sh` makes) to GitHub and posting `<team>: <url> @ <commit>` as a comment on the
+[submissions issue](https://github.com/andrzejnovak/hsf-india-agents/issues/1); `bash submit.sh <team> <url>`
+runs the self-check, checks the commit is pushed and prints (or, with `gh`, posts) that line. The last comment
+per team before the deadline counts. A team that cannot push hands you a tarball: unpack it as
+`<out>/submissions/<team>/` and add a `<team>: file://<out>/submissions/<team> @ <commit>` line to a `--teams`
+file (or any git URL you host it at).
 
-## The sealed run (the kit, in your own Binder session)
+## The sealed run (the kit, anywhere with git, python3, numpy, scipy)
 
 ```bash
-cd ~/hsf-india-agents/hackathon && git pull
-python3 sealed_run.py --seed <secret>                        # ~/hack-sealed: 21 datasets (response on), truths kept apart, every team scored
+cd hsf-india-agents/hackathon && git pull
+python3 sealed_run.py --seed <secret>                        # reads issue 1, clones each team at its commit, ~/hack-sealed: 21 datasets (response on), truths kept apart
 cat ~/hack-sealed/results/leaderboard.md                     # per team: results/<team>/recovery.png, score.txt, check.txt
 ```
 About 2 minutes per team with a pipeline like the naive fit (the self-check runs it twice, the suite 21 times;
-`--team red` for one team, `--timeout` is the contract's 600 s per dataset). The suite is reused on a second run
-with the same seed, so run it as submissions come in and once more after the deadline. The levels and the order
-are in the script's docstring; `level()` is the one function to change if the rule changes. The submissions run
-as you with no sandbox (only the self-check is sandboxed), so a Binder session, not your laptop, and never
-`--out` under `/data`: the truths would be world-readable.
+`--team red` for one team, `--teams FILE` for a hand-made list, `--timeout` is the contract's 600 s per
+dataset). The suite is reused on a second run with the same seed, so run it as submissions come in and once
+more after the deadline. The levels and the order are in the script's docstring; `level()` is the one function
+to change if the rule changes. The submissions run as you with no sandbox (only the self-check is sandboxed):
+a throwaway session or a VM, not your own account, and `--out` somewhere private (the truths are there).
 
-The private harness is the sandboxed alternative, on your laptop:
+The private harness is the sandboxed alternative, on the clones `sealed_run.py` made (or your own):
 ```bash
 python -m sbh build-suite --task gauss_peak --name hsf_sealed --n-seeds 21 --master-seed <secret>   # response on
 python -m sbh closure --suite suites/hsf_sealed                                                      # sigma_ref for the precision term
-SBH_BASE_ENV_ONLY=1 pixi run python -m sbh eval --suite suites/hsf_sealed --submission /data/hackathon/<team> --label <team>
+SBH_BASE_ENV_ONLY=1 pixi run python -m sbh eval --suite suites/hsf_sealed --submission ~/hack-sealed/submissions/<team>/submission --label <team>
 ```
 The submissions ship no pixi manifest, so `SBH_BASE_ENV_ONLY=1` runs them with the evaluator's interpreter:
 check `pixi run python -c "import scipy"` first. The eval prints the aggregates per team.

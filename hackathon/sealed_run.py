@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
-"""The sealed run, with the kit alone: build a sealed suite from a secret seed, run every submission in the drop
-folder on it, write the leaderboard.
+"""The sealed run, with the kit alone, anywhere with git, python3, numpy and scipy: build a sealed suite from a
+secret seed, clone every submitted team repository at its submitted commit, run them all, write the leaderboard.
 
-    python3 sealed_run.py --seed <secret> [--n 21] [--drop /data/hackathon] [--out ~/hack-sealed]
+    python3 sealed_run.py --seed <secret> [--n 21] [--out ~/hack-sealed] [--issue 1 | --teams FILE]
                           [--team red --team blue] [--no-check] [--timeout 600]
 
-The suite goes under --out (keep it in your own home, never under /data): seed_000 is the public truth and the
-rest are drawn from the task's priors with the detector response on. The truths are moved out of the dataset
-directories into <out>/truths/ before anything runs, and <out> is made private, so a submission that reads its
-dataset directory finds no answer key. A second run with the same --seed and --out reuses the suite.
+Submissions are the comments on the submissions issue (--issue, default 1 of andrzejnovak/hsf-india-agents,
+read through the public GitHub API with no token), one line each: `<team>: <git url> @ <commit>`; the last
+comment per team wins. --teams FILE reads the same lines from a file instead (a hand-made list, or the issue
+copied over). Each repository is cloned into <out>/submissions/<team>/ and checked out at that commit; the
+submission is its submission/ directory (or its root when run.sh is there).
 
-Per team (every <drop>/<team>/run.sh): the submission is copied to <out>/submissions/<team>/, the self-check
-runs on it (hygiene, the contract, determinism on the public dataset; <out>/results/<team>/check.txt), then
-score_suite.score runs it on every sealed dataset (score.txt, score.json, recovery.png). Submissions run as
-you, without a sandbox: run this in a throwaway session (a Binder), not on your laptop; the private harness's
-`sbh eval` is the sandboxed alternative (ORGANISER.md).
+The suite goes under --out: seed_000 is the public truth and the rest are drawn from the task's priors with the
+detector response on. The truths are moved out of the dataset directories into <out>/truths/ before anything
+runs, and <out> is made private, so a submission that reads its dataset directory finds no answer key. A second
+run with the same --seed and --out reuses the suite (and re-clones each team).
+
+Per team: the self-check (hygiene, the contract, determinism on the public dataset; <out>/results/<team>/check.txt),
+then score_suite.score on every sealed dataset (score.txt, score.json, recovery.png). Submissions run as you,
+without a sandbox: run this in a throwaway session or a VM rather than on your own account; the private
+harness's `sbh eval` on the clones is the sandboxed alternative (ORGANISER.md).
 
 Levels, as the pitch defines them (change `level` below if the rule changes):
   0  self-check failed, fewer than 90 % of the datasets gave a valid RESULT.json, or no slope
@@ -29,10 +34,12 @@ import argparse
 import json
 import math
 import os
+import re
 import shutil
 import stat
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -42,6 +49,8 @@ import score_suite as S  # noqa: E402
 import toy_suite as T  # noqa: E402
 
 PUBLIC = HERE / "datasets" / "public" / "seed_000"
+ISSUE_REPO = "andrzejnovak/hsf-india-agents"
+LINE = re.compile(r"^\s*`?([A-Za-z0-9_-]+)\s*:\s*(\S+?)\s*@\s*([0-9a-fA-F]{7,40})`?\s*$", re.M)
 
 
 def build_suite(out: Path, seed: int, n: int, log):
@@ -70,14 +79,52 @@ def build_suite(out: Path, seed: int, n: int, log):
     return suite, truths
 
 
-def teams_in(drop: Path, only):
-    found = sorted(d for d in drop.iterdir() if d.is_dir() and not d.name.startswith(".") and (d / "run.sh").is_file())
-    if only:
-        missing = sorted(set(only) - {d.name for d in found})
-        if missing:
-            raise SystemExit(f"no submission for {', '.join(missing)} in {drop}")
-        found = [d for d in found if d.name in only]
-    return found
+def parse_lines(texts):
+    """`<team>: <url> @ <commit>` lines, in order; the last line per team wins."""
+    teams = {}
+    for text, when in texts:
+        for m in LINE.finditer(text):
+            teams[m.group(1)] = {"team": m.group(1), "url": m.group(2), "commit": m.group(3).lower(), "submitted": when}
+    return teams
+
+
+def teams_from_issue(number: int):
+    url = f"https://api.github.com/repos/{ISSUE_REPO}/issues/{number}/comments?per_page=100"
+    texts, page = [], 1
+    while True:
+        req = urllib.request.Request(url + f"&page={page}", headers={"Accept": "application/vnd.github+json",
+                                                                     "User-Agent": "hsf-india-hackathon"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            comments = json.loads(r.read().decode())
+        texts += [(c["body"], f"{c.get('created_at', '')} by {c.get('user', {}).get('login', '?')}") for c in comments]
+        if len(comments) < 100:
+            break
+        page += 1
+    return parse_lines(texts)
+
+
+def teams_from_file(path: Path):
+    return parse_lines([(path.read_text(), f"from {path.name}")])
+
+
+def fetch(entry, dest: Path, log):
+    """Clone the team repository at the submitted commit into dest; returns the submission directory or None."""
+    if dest.exists():
+        shutil.rmtree(dest)
+    try:
+        subprocess.run(["git", "clone", "-q", entry["url"], str(dest)], check=True, capture_output=True, text=True, timeout=300)
+        subprocess.run(["git", "-C", str(dest), "checkout", "-q", entry["commit"]], check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        log(f"cannot fetch {entry['url']} @ {entry['commit']}: {(e.stderr or e.stdout).strip()[-200:]}")
+        return None
+    except subprocess.TimeoutExpired:
+        log(f"cloning {entry['url']} timed out")
+        return None
+    for sub in (dest / "submission", dest):
+        if (sub / "run.sh").is_file():
+            return sub
+    log(f"no submission/run.sh (nor run.sh) in {entry['url']} @ {entry['commit']}")
+    return None
 
 
 def self_check(sub: Path, log_path: Path, timeout: float):
@@ -126,7 +173,7 @@ def leaderboard(entries, path_md: Path, path_json: Path, log):
         rows.append([str(i), e["team"], str(e["level"]),
                      fmt(mh and mh["slope"]), fmt(mu and mu["slope"]), fmt(mh and mh["width"]), fmt(mu and mu["width"]),
                      f"{a['false_discoveries']}/{a['n_null']}" if a["n_null"] else "–",
-                     fmt(a["power"]), f"{a['n_ok']}/{a['n']}", "PASS" if e["check_ok"] else "FAIL",
+                     fmt(a["power"]), f"{a['n_ok']}/{a['n']}" if a["n"] else "–", "PASS" if e["check_ok"] else "FAIL",
                      e.get("submitted") or "–"])
     w = [max(len(h), *(len(r[j]) for r in rows)) if rows else len(h) for j, h in enumerate(head)]
     line = lambda cells: "| " + " | ".join(c.ljust(w[j]) for j, c in enumerate(cells)) + " |"
@@ -144,34 +191,38 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, required=True, help="the secret master seed (python3 -c 'import secrets; print(secrets.randbelow(2**31))')")
     ap.add_argument("--n", type=int, default=21, help="datasets in the sealed suite, public seed_000 included (default 21)")
-    ap.add_argument("--drop", default=os.environ.get("HACK_DROP", "/data/hackathon"), help="where the teams submitted (default /data/hackathon or $HACK_DROP)")
+    ap.add_argument("--issue", type=int, default=1, help=f"the submissions issue of {ISSUE_REPO} (default 1)")
+    ap.add_argument("--teams", help="read the `<team>: <url> @ <commit>` lines from this file instead of the issue")
     ap.add_argument("--out", default="~/hack-sealed", help="private working directory: suite, truths, submissions, results (default ~/hack-sealed)")
-    ap.add_argument("--team", action="append", help="only these teams (repeatable); default every <drop>/<team>/run.sh")
+    ap.add_argument("--team", action="append", help="only these teams (repeatable)")
     ap.add_argument("--no-check", action="store_true", help="skip the self-check (its verdict then reads FAIL)")
     ap.add_argument("--timeout", type=float, default=600, help="seconds per dataset, the contract's 600")
     a = ap.parse_args()
-    out, drop = Path(a.out).expanduser().resolve(), Path(a.drop).expanduser().resolve()
-    if not drop.is_dir():
-        raise SystemExit(f"no drop folder {drop}")
-    if drop in out.parents or out == drop:
-        raise SystemExit("--out must not be inside the drop folder: the truths would be readable by everyone")
+    out = Path(a.out).expanduser().resolve()
     log = print
+    teams = teams_from_file(Path(a.teams)) if a.teams else teams_from_issue(a.issue)
+    if a.team:
+        missing = sorted(set(a.team) - set(teams))
+        if missing:
+            raise SystemExit(f"no submission line for {', '.join(missing)}")
+        teams = {t: e for t, e in teams.items() if t in a.team}
+    if not teams:
+        raise SystemExit("no submissions: no `<team>: <url> @ <commit>` line " + (f"in {a.teams}" if a.teams else f"on issue {a.issue}"))
+    log("submissions: " + ", ".join(f"{t} ({e['url']} @ {e['commit'][:7]})" for t, e in teams.items()))
     suite, truths = build_suite(out, a.seed, a.n, log)
     results = out / "results"; results.mkdir(exist_ok=True)
     entries = []
-    for src in teams_in(drop, a.team):
-        team = src.name
+    for team, entry in teams.items():
         log(f"\n=== {team}")
-        sub = out / "submissions" / team
-        if sub.exists():
-            shutil.rmtree(sub)
-        shutil.copytree(src, sub, ignore=shutil.ignore_patterns(".git", "__pycache__", ".venv"))
-        submitted = None
-        if (sub / "SUBMITTED.txt").is_file():
-            for ln in (sub / "SUBMITTED.txt").read_text().splitlines():
-                if ln.startswith("submitted:"):
-                    submitted = ln.split(":", 1)[1].strip()
         res = results / team; res.mkdir(exist_ok=True)
+        submitted = f"{entry['commit'][:7]} ({entry['submitted']})"
+        sub = fetch(entry, out / "submissions" / team, log)
+        if sub is None:
+            (res / "check.txt").write_text("not fetched\n")
+            entries.append({"team": team, "check_ok": False, "submitted": submitted, "level": 0, "distance": float("inf"),
+                            "agg": S.aggregate([]), "rows": [], "url": entry["url"], "commit": entry["commit"]})
+            log("level 0 (not fetched)")
+            continue
         if a.no_check:
             check_ok, note = False, "skipped (--no-check)"
         else:
@@ -186,11 +237,10 @@ def main():
             log("no matplotlib here: no recovery.png (python3 -m pip install matplotlib, or plot score.json elsewhere)")
         e = {"team": team, "check_ok": check_ok, "submitted": submitted, "agg": r["agg"],
              "level": level(r["agg"], check_ok), "distance": distance(r["agg"]), "rows": r["rows"],
+             "url": entry["url"], "commit": entry["commit"],
              "scored_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
         entries.append(e)
         log(f"level {e['level']}  (distance {fmt(e['distance'])})")
-    if not entries:
-        raise SystemExit(f"no submissions in {drop}")
     leaderboard(entries, results / "leaderboard.md", results / "leaderboard.json", log)
 
 
