@@ -2,6 +2,7 @@
 """The physics of the task in pictures, made from the toy itself:  python3 make_plots.py [--out figs] [--fast]
 
   data_public.png   the public dataset: a falling background and a bump at 125 GeV, with the MC templates
+  fit.png           a fit, explained: the model's four knobs on the data, and the likelihood valley whose width is the error bar
   mu.png            the same mass with mu = 0, 1, 3: the signal strength
   moves.png         three datasets with the resonance planted at 117, 125, 133 GeV: the truth moves
   control.png       the detector response: the Z control peak shifted and smeared against the nominal MC,
@@ -65,6 +66,47 @@ def fig_data(root, out, plt):
     ax.legend(frameon=False, fontsize=9, loc="upper right")
     ax.set_title("The public dataset: planted mass 125 GeV, μ = 1, nominal response", fontsize=11)
     fig.tight_layout(); fig.savefig(out / "data_public.png", dpi=140); plt.close(fig)
+
+
+def fig_fit(root, out, plt):
+    """a fit, explained: a model with four knobs turned until it matches the histogram; the valley's width is the error bar"""
+    from scipy.optimize import minimize
+    d, t = make(dict(T.PUBLIC_TRUTH), 11, root)
+    m = np.load(d / "data" / "events.npy")
+    edges = np.arange(100.0, 160.5, 1.0); c = 0.5 * (edges[1:] + edges[:-1]); n, _ = np.histogram(m, edges)
+    def expected(p):
+        nb, tau, ns, mh = p
+        bkg = np.exp(-(c - 100.0) / tau); bkg *= nb / bkg.sum()
+        sig = np.exp(-0.5 * ((c - mh) / T.SIG_RES) ** 2); sig *= ns / max(sig.sum(), 1e-12)
+        return bkg, sig
+    def nll(p):
+        if p[0] <= 0 or p[1] <= 1 or p[2] < 0: return 1e12
+        lam = np.clip(sum(expected(p)), 1e-9, None); return float(np.sum(lam - n * np.log(lam)))
+    best = min((minimize(nll, [n.sum(), 30.0, 100.0, mh0], method="Nelder-Mead", options={"xatol": 1e-4, "fatol": 1e-5, "maxiter": 5000}) for mh0 in (120.0, 125.0, 130.0)), key=lambda r: r.fun)
+    nb, tau, ns, mh = best.x
+    scan = np.arange(122.0, 128.01, 0.1)
+    prof = np.array([minimize(lambda q: nll([q[0], q[1], q[2], x]), best.x[:3], method="Nelder-Mead", options={"xatol": 1e-4, "fatol": 1e-5}).fun for x in scan]) - best.fun
+    inside = scan[prof <= 0.5]; lo, hi = inside.min(), inside.max(); sig_m = 0.5 * (hi - lo)
+    mu = ns / float(T.n_sm(mh))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.4), gridspec_kw={"width_ratios": [1.35, 1]})
+    ax = axes[0]
+    ax.errorbar(c, n, yerr=np.sqrt(n), fmt="o", ms=3, color="k", label="the data: a histogram of the masses")
+    bkg, sg = expected(best.x)
+    ax.step(edges, np.append(bkg, 0), where="post", color=BLUE, lw=1.5, ls="--", label="background: N$_{bkg}$ · exp(−m / τ)")
+    ax.step(edges, np.append(bkg + sg, 0), where="post", color=ORANGE, lw=2, label="background + signal: N$_{sig}$ · Gauss(m$_H$, 2 GeV)")
+    ax.text(0.98, 0.72, f"the four knobs, turned until the curve\nmatches the points (maximum likelihood):\n"
+            f"N$_{{bkg}}$ = {nb:.0f}   τ = {tau:.1f} GeV\nN$_{{sig}}$ = {ns:.0f} → μ = {mu:.2f}   m$_H$ = {mh:.2f} GeV",
+            transform=ax.transAxes, ha="right", va="top", fontsize=9, bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+    ax.set_xlabel("reconstructed mass [GeV]"); ax.set_ylabel("events / GeV"); ax.set_xlim(100, 160); ax.set_ylim(0, None)
+    ax.legend(frameon=False, fontsize=9, loc="upper left"); ax.set_title("A fit: a model with four knobs, matched to the data", fontsize=11)
+    ax = axes[1]
+    ax.plot(scan, prof, color=RED, lw=2)
+    ax.axhline(0.5, color="0.5", ls=":", lw=1); ax.axvline(mh, color="0.5", ls=":", lw=1)
+    ax.axvspan(lo, hi, color=ORANGE, alpha=0.25, label=f"where the valley is less than ½ unit deep:\nm$_H$ = {mh:.2f} ± {sig_m:.2f} GeV")
+    ax.annotate("best fit = the bottom", xy=(mh, 0), xytext=(mh + 1.2, 1.6), arrowprops=dict(arrowstyle="->", color="0.3"), fontsize=9, color="0.2")
+    ax.set_xlabel("m$_H$ tried [GeV]"); ax.set_ylabel("how much worse the match gets  (ΔNLL)"); ax.set_ylim(0, 6); ax.set_xlim(scan.min(), scan.max())
+    ax.legend(frameon=False, fontsize=9, loc="upper right"); ax.set_title("The error bar: the width of the likelihood valley", fontsize=11)
+    fig.tight_layout(); fig.savefig(out / "fit.png", dpi=140); plt.close(fig)
 
 
 def fig_mu(root, out, plt):
@@ -174,7 +216,7 @@ def main():
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="hack_figs_"))
     try:
-        for f in (fig_data, fig_mu, fig_moves, fig_control) + (() if a.fast else (fig_pulls,)):
+        for f in (fig_data, fig_fit, fig_mu, fig_moves, fig_control) + (() if a.fast else (fig_pulls,)):
             f(root, out, plt); print("wrote", out / (f.__name__[4:] + ".png"))
     finally:
         shutil.rmtree(root, ignore_errors=True)

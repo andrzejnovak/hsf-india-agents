@@ -8,6 +8,20 @@ whether your answers move with the truth, with honest error bars.
 Read, in this order: [`PROMPT.md`](PROMPT.md) (the task), [`DATASET.md`](DATASET.md) (the data),
 [`EVAL_CONTRACT.md`](EVAL_CONTRACT.md) (what you deliver, how it is run and scored).
 
+## Three levels
+
+1. **A pipeline.** A `run.sh` that fits the four knobs (background amount and slope, signal amount and mass), passes
+   the self-check and follows the truth on a suite you made (slope ≈ 1). The agent can write it from `PROMPT.md`;
+   `examples/naive_fit` is one.
+2. **Calibrated.** Measure the mass scale and the extra smearing on the Z control peak and apply them to the fit:
+   pulls of width ≈ 1 with the response on, an honest significance, no false discoveries on the empty datasets.
+3. **The agent does it.** A brief, a check it must pass, a reviewer, a second model: whatever gets `deepseek-v4-flash`
+   or `glm-5` from the bare prompt to a level-2 pipeline on its own. How much context that takes is an open
+   question; keep the prompts and the runs, they are the result.
+
+The metric: **sensitivity** (the slope of reported vs planted; 1 is a measurement, 0 is a constant) while keeping
+**calibration** (the width of your pulls with your own error bars; 1 is honest, 4 is the plain fit, 0.3 is padded).
+
 ## Setup (2 minutes, in a JupyterLab terminal)
 
 ```bash
@@ -51,7 +65,12 @@ bash new_team.sh <team-name>        # -> ~/hack-<team-name>: task files, the pub
 1. **[`figs/data_public.png`](figs/data_public.png) — the data.** Each event is one number, a reconstructed mass in
    GeV. Background falls off exponentially; a particle of mass m<sub>H</sub> shows as a Gaussian bump 2 GeV wide. The
    MC templates in `mc/` (a background shape, signal shapes at 115…135 GeV) are what you fit with.
-2. **[`figs/mu.png`](figs/mu.png) — the signal strength μ.** How many signal events, relative to the Standard Model
+2. **[`figs/fit.png`](figs/fit.png) — a fit.** A measurement is a model with a few knobs turned until it matches
+   the histogram: here N<sub>bkg</sub> and τ for the falling background, N<sub>sig</sub> and m<sub>H</sub> for the
+   bump (maximum likelihood: the knobs that make the observed counts most probable). Move m<sub>H</sub> away from
+   the best value and the match gets worse; the width of that valley, where it is less than ½ unit worse, is the
+   error bar. An honest error bar covers the truth about two times in three; that is what the sealed run tests.
+3. **[`figs/mu.png`](figs/mu.png) — the signal strength μ.** How many signal events, relative to the Standard Model
    expectation at that mass (`mc/cross_sections.json`: 120 events at 125 GeV for μ = 1). μ = 0 is no signal, one
    dataset in five. The *significance* is how unlikely the bump is from background alone, in σ; `discovery: true`
    is a claim that it is real (Z ≥ 5), and claiming it on an empty dataset is a false discovery.
