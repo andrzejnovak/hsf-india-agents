@@ -9,14 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       n:
-        description: datasets in the sealed suite (public seed_000 included)
+        description: "datasets in the sealed suite (public seed_000 included)"
         default: "21"
       plots:
-        description: publish the recovery plots too (after the deadline only, they show the planted values)
+        description: "publish the recovery plots too (after the deadline only, they show the planted values)"
         type: boolean
         default: false
       seed:
-        description: a fixed master seed (empty: made up for this run and never printed)
+        description: "a fixed master seed (empty: made up for this run and never printed)"
         default: ""
 
 concurrency:
