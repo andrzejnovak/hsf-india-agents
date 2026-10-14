@@ -37,11 +37,22 @@ per team before the deadline counts. A team that cannot push hands you a tarball
 `<out>/submissions/<team>/` and add a `<team>: file://<out>/submissions/<team> @ <commit>` line to a `--teams`
 file (or any git URL you host it at).
 
-## The sealed run (the kit, anywhere with git, python3, numpy, scipy)
+## The sealed run in CI (the default)
+
+`.github/workflows/sealed_run.yml` runs `sealed_run.py` on a GitHub-hosted runner on every comment on the
+submissions issue and commits the table into `hackathon/README.md` (the `<!-- leaderboard -->` markers). The
+suite is drawn from a seed made up in the job and never printed, so each run is self-contained and nothing
+secret is stored anywhere; the submissions run as `nobody` with the truths unreadable (`--as nobody`) and a
+scrubbed environment. After the deadline: Actions → "sealed run" → Run workflow with plots = true (and a
+larger n if you like) for the final table with the recovery plots, committed under `hackathon/results/`;
+the plots show the planted values per dataset, which is why they wait for the deadline. A fixed seed input
+makes two runs comparable. The run takes a few minutes per team.
+
+## The sealed run by hand (anywhere with git, python3, numpy, scipy)
 
 ```bash
 cd hsf-india-agents/hackathon && git pull
-python3 sealed_run.py --seed <secret>                        # reads issue 1, clones each team at its commit, ~/hack-sealed: 21 datasets (response on), truths kept apart
+python3 sealed_run.py --seed <secret>                        # reads issue 1, clones each team at its commit, ~/hack-sealed: 21 datasets (response on), truths kept apart; --as nobody where sudo allows it
 cat ~/hack-sealed/results/leaderboard.md                     # per team: results/<team>/recovery.png, score.txt, check.txt
 ```
 About 2 minutes per team with a pipeline like the naive fit (the self-check runs it twice, the suite 21 times;

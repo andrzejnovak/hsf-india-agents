@@ -131,7 +131,15 @@ is right there and wrong elsewhere has hard-coded something.
 ## The day
 
 1. Setup: the two commands above pass; teams and workspaces.
-2. Build, self-check, score yourself; submit early and again whenever it gets better.
+2. Build, self-check, score yourself; submit early and again whenever it gets better: every comment on the
+   issue re-runs the sealed run (a GitHub Actions job, every submission on 20 fresh datasets nobody has seen)
+   and updates the table below within a few minutes.
 3. The deadline is announced in the room; the last comment per team on the issue before it counts.
-4. The sealed run: every submission on 20 datasets nobody has seen; recovery plots and the leaderboard, one
-   slide per team, then each team on how it got there (level 3 is judged there).
+4. The final sealed run: the table with recovery plots, one slide per team, then each team on how it got there
+   (level 3 is judged there).
+
+## Leaderboard
+
+<!-- leaderboard -->
+_No sealed run yet._
+<!-- /leaderboard -->

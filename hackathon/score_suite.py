@@ -12,6 +12,7 @@ each seed's truth from DIR/<seed>.json instead of <seed>/truth.json (the sealed 
 """
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -23,12 +24,18 @@ import numpy as np
 Z_APPLICABLE = 5.0
 
 
-def run_seed(sub: Path, ds: Path, timeout: float):
+def run_seed(sub: Path, ds: Path, timeout: float, as_user: str = None):
+    """One run of sub/run.sh on the dataset, with a scrubbed environment (PATH, a scratch HOME, LANG: nothing of
+    yours) and, with as_user, as that user through sudo -n (the sealed run: the truths stay unreadable)."""
     out = Path(tempfile.mkdtemp(prefix="score_"))
+    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(out), "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
+    cmd = ["bash", str(sub / "run.sh"), str(ds.resolve()), str(out)]
+    if as_user:
+        os.chmod(out, 0o1777)
+        cmd = ["sudo", "-n", "-u", as_user, "--", "env", "-i"] + [f"{k}={v}" for k, v in env.items()] + cmd
     t = time.time()
     try:
-        p = subprocess.run(["bash", str(sub / "run.sh"), str(ds.resolve()), str(out)], cwd=sub,
-                           capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, cwd=sub, env=env, capture_output=True, text=True, timeout=timeout)
         status, log = p.returncode, (p.stdout + p.stderr)[-800:]
     except subprocess.TimeoutExpired:
         status, log = "timeout", ""
@@ -36,8 +43,10 @@ def run_seed(sub: Path, ds: Path, timeout: float):
     if status == 0 and (out / "RESULT.json").is_file():
         try:
             res = json.loads((out / "RESULT.json").read_text())
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, PermissionError) as e:
             status, log = "malformed", str(e)
+    if as_user:
+        subprocess.run(["sudo", "-n", "rm", "-rf", str(out)], capture_output=True)
     shutil.rmtree(out, ignore_errors=True)
     return status, res, time.time() - t, log
 
@@ -58,7 +67,7 @@ def load_truth(ds: Path, truths: Path = None):
     return json.loads(f.read_text()) if f.is_file() else None
 
 
-def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log=print):
+def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log=print, as_user: str = None):
     """Run sub/run.sh on every seed of the suite and compare with the truths; prints the per-seed table through
     log and returns {"rows": [...], "agg": aggregate(rows)}."""
     sub, suite = Path(sub).resolve(), Path(suite).resolve()
@@ -72,7 +81,7 @@ def score(sub: Path, suite: Path, timeout: float = 600, truths: Path = None, log
         f"{'mu planted':>10s} {'reported':>14s} {'pull':>6s}  {'Z_exp':>5s} {'Z_obs':>5s} disc")
     for ds in seeds:
         truth = load_truth(ds, truths)
-        status, res, wall, errlog = run_seed(sub, ds, timeout)
+        status, res, wall, errlog = run_seed(sub, ds, timeout, as_user)
         row = {"seed": ds.name, "truth": truth, "ok": False, "status": str(status), "wall": wall}
         if res is not None:
             try:
