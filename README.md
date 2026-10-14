@@ -139,3 +139,8 @@ branch `materials/clariphy` @ `c63cb76`), used with his agreement. `upstream/` h
 `tools/build_notebooks.py` rebuilds `notebooks/` from them, and its edit list is the whole diff: the models
 switched to DeepSeek and GLM, cross-links, renumbering, fixes, and new cells, marked NEW in the script (notebook 1's
 section 3 on what the model receives; notebook 3's check of the agent's work and its note on what opencode sends).
+
+## Hackathon
+
+Plant a value, hide it, find it: the toy version of the benchmark from the talk, as a participant bundle with a
+self-check, a generator for your own test suites and a scorer. Everything is in [`hackathon/`](hackathon/README.md).
