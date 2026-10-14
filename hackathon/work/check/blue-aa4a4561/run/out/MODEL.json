@@ -1,0 +1,59 @@
+{
+ "channels": [
+  {
+   "name": "m4l",
+   "samples": [
+    {
+     "name": "signal",
+     "data": [
+      5.0
+     ],
+     "modifiers": [
+      {
+       "name": "mu",
+       "type": "normfactor",
+       "data": null
+      }
+     ]
+    },
+    {
+     "name": "background",
+     "data": [
+      10.0
+     ],
+     "modifiers": []
+    }
+   ]
+  }
+ ],
+ "observations": [
+  {
+   "name": "m4l",
+   "data": [
+    15.0
+   ]
+  }
+ ],
+ "measurements": [
+  {
+   "name": "meas",
+   "config": {
+    "poi": "mu",
+    "parameters": []
+   }
+  }
+ ],
+ "version": "1.0.0",
+ "_meta": {
+  "binning": {
+   "m4l": {
+    "observable": "m4l",
+    "edges": [
+     105.0,
+     160.0
+    ],
+    "data_derived": false
+   }
+  }
+ }
+}

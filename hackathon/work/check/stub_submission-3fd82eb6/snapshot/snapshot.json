@@ -1,0 +1,14 @@
+{
+ "source": "/home/user/hsf-india-agents/hackathon/examples/stub_submission",
+ "sha256": "0d244a24663e3d1a5240d2e453150e28029d91192df1fa6d1686be2634224e5d",
+ "n_files": 2,
+ "bytes": 845,
+ "files": [
+  "README.md",
+  "run.sh"
+ ],
+ "git": null,
+ "hygiene_violations": [],
+ "frozen_at": "2026-10-14T05:04:34",
+ "tarball": "/home/user/hsf-india-agents/hackathon/work/check/stub_submission-3fd82eb6/snapshot/snapshot.tar.gz"
+}

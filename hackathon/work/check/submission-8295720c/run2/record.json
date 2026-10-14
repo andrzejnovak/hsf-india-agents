@@ -1,0 +1,50 @@
+{
+ "seed": "seed_000",
+ "dataset": "/home/user/hsf-india-agents/hackathon/datasets/public/seed_000",
+ "out_dir": "/home/user/hsf-india-agents/hackathon/work/check/submission-8295720c/run2/out",
+ "exit_code": 0,
+ "wall_s": 1.319,
+ "cpu_s": 1.481,
+ "cpu_source": "wait4 on the sbh reaper as child subreaper",
+ "cpu_cgroup_s": 1.509,
+ "maxrss_mb": 73.5,
+ "tree_mem_mb": 66.5,
+ "tmpfs_mb": 0.0,
+ "timed_out": false,
+ "failure": null,
+ "result": {
+  "pois": [
+   {
+    "name": "mH",
+    "value": 125.1505371687955,
+    "stat": 0.3787712094460206,
+    "syst": 0.0,
+    "total": 0.3787712094460206
+   },
+   {
+    "name": "mu",
+    "value": 1.142785159128019,
+    "stat": 0.1748612564046468,
+    "syst": 0.0,
+    "total": 0.1748612564046468
+   }
+  ],
+  "significance_obs": 7.414326350614562,
+  "discovery": true,
+  "notes": "naive histogram fit, nominal response assumed (no in-situ calibration)"
+ },
+ "result_errors": [],
+ "isolation": {
+  "clean_unpack": "yes",
+  "timeout": "600s",
+  "memory": "RLIMIT_AS 6144 MB",
+  "environment": "scrubbed; runtime: task base env",
+  "sandbox": "setpriv: runs as nobody, no new privileges; sealed truth root-only",
+  "network": "as container (verifier image has none)"
+ },
+ "stderr_tail": "",
+ "notes": [],
+ "host": "vm",
+ "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+ "contract": null
+}

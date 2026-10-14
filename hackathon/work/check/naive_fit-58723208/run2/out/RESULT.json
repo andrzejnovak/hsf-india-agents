@@ -1,0 +1,21 @@
+{
+ "pois": [
+  {
+   "name": "mH",
+   "value": 125.1505371687955,
+   "stat": 0.3787712094460206,
+   "syst": 0.0,
+   "total": 0.3787712094460206
+  },
+  {
+   "name": "mu",
+   "value": 1.142785159128019,
+   "stat": 0.1748612564046468,
+   "syst": 0.0,
+   "total": 0.1748612564046468
+  }
+ ],
+ "significance_obs": 7.414326350614562,
+ "discovery": true,
+ "notes": "naive histogram fit, nominal response assumed (no in-situ calibration)"
+}

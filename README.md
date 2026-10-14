@@ -142,5 +142,7 @@ section 3 on what the model receives; notebook 3's check of the agent's work and
 
 ## Hackathon
 
-Plant a value, hide it, find it: the toy version of the benchmark from the talk, as a participant bundle with a
-self-check, a generator for your own test suites and a scorer. Everything is in [`hackathon/`](hackathon/README.md).
+Wednesday's hackathon project, plant a value, hide it, find it: a toy resonance search with a self-check, a generator
+for your own test suites, a scorer, and a sealed evaluation that runs in CI. The kit is its own repository, data
+included: [andrzejnovak/hsf-india-hackathon](https://github.com/andrzejnovak/hsf-india-hackathon) (`git clone`, then
+its README). The slides: [the hackathon cut](https://andrzejnovak.github.io/talks/2026-10-13-hsf-india/index.html?profile=hack).

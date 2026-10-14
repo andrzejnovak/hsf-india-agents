@@ -1,0 +1,14 @@
+{
+ "source": "/tmp/claude-0/-home-user/8a833a5d-f607-582a-9d7b-20575461f40c/scratchpad/hack-red/submission",
+ "sha256": "eae83d9a3e959d6297f39d481f511fa68da7039a9c3a1367d00643210800fd59",
+ "n_files": 2,
+ "bytes": 1972,
+ "files": [
+  "fit.py",
+  "run.sh"
+ ],
+ "git": null,
+ "hygiene_violations": [],
+ "frozen_at": "2026-10-14T05:12:16",
+ "tarball": "/home/user/hsf-india-agents/hackathon/work/check/submission-f52ec777/snapshot/snapshot.tar.gz"
+}

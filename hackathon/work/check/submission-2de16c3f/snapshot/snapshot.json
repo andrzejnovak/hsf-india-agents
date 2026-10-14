@@ -1,0 +1,13 @@
+{
+ "source": "/tmp/claude-0/-home-user/8a833a5d-f607-582a-9d7b-20575461f40c/scratchpad/sealed2/submissions/blue/submission",
+ "sha256": "a0b9101a939929aa7699867e091979a2fb733298b5ef5f5a1fc40b2d2e67847e",
+ "n_files": 1,
+ "bytes": 767,
+ "files": [
+  "run.sh"
+ ],
+ "git": null,
+ "hygiene_violations": [],
+ "frozen_at": "2026-10-14T05:12:30",
+ "tarball": "/home/user/hsf-india-agents/hackathon/work/check/submission-2de16c3f/snapshot/snapshot.tar.gz"
+}

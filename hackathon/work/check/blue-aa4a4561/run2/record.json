@@ -1,0 +1,50 @@
+{
+ "seed": "seed_000",
+ "dataset": "/home/user/hsf-india-agents/hackathon/datasets/public/seed_000",
+ "out_dir": "/home/user/hsf-india-agents/hackathon/work/check/blue-aa4a4561/run2/out",
+ "exit_code": 0,
+ "wall_s": 0.105,
+ "cpu_s": 0.095,
+ "cpu_source": "wait4 on the sbh reaper as child subreaper",
+ "cpu_cgroup_s": 0.095,
+ "maxrss_mb": 21.4,
+ "tree_mem_mb": 1.3,
+ "tmpfs_mb": 0.0,
+ "timed_out": false,
+ "failure": null,
+ "result": {
+  "pois": [
+   {
+    "name": "mH",
+    "value": 125.0,
+    "stat": 0.4,
+    "syst": 0.0,
+    "total": 0.4
+   },
+   {
+    "name": "mu",
+    "value": 1.0,
+    "stat": 0.25,
+    "syst": 0.0,
+    "total": 0.25
+   }
+  ],
+  "significance_obs": 4.0,
+  "discovery": false,
+  "note": "constant output: this pipeline never opens the dataset"
+ },
+ "result_errors": [],
+ "isolation": {
+  "clean_unpack": "yes",
+  "timeout": "600s",
+  "memory": "RLIMIT_AS 6144 MB",
+  "environment": "scrubbed; runtime: task base env",
+  "sandbox": "setpriv: runs as nobody, no new privileges; sealed truth root-only",
+  "network": "as container (verifier image has none)"
+ },
+ "stderr_tail": "",
+ "notes": [],
+ "host": "vm",
+ "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+ "contract": null
+}
